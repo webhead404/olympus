@@ -1,10 +1,7 @@
 {
-  "_comment0": "# spellchecker: disable",
-  "_comment1": "NAME=windows-10            WINDOWS_VERSION=10   DRIVER_ISO=./packer_cache/virtio-win.iso ISO_URL=https://software-download.microsoft.com/download/pr/19041.264.200511-0456.vb_release_svc_refresh_CLIENTENTERPRISEEVAL_OEMRET_x64FRE_en-us.iso                                             packer build windows.json",
-  
   "variables": {
-    "iso_md5": "e85637e135e9b6dbc5fa02b463a95764",
-    "iso_path": "https://software-download.microsoft.com/download/pr/19041.264.200511-0456.vb_release_svc_refresh_CLIENTENTERPRISEEVAL_OEMRET_x64FRE_en-us.iso"
+    "iso_md5": "C5BF8CC6238F5398AEF04D9465521D84",
+    "iso_path": "C:/tiny10 21H2 x64 beta 1.iso"
   },
   
   "builders": [
@@ -13,7 +10,6 @@
       "disk_size": 61440,
       "floppy_files": [
         "Autounattend.xml",
-        "update-windows.ps1",
         "configure-winrm.ps1"
       ],
       "guest_additions_mode": "upload",
@@ -55,29 +51,21 @@
   "provisioners": [
     {
       "scripts": [
-        "./scripts/install-guest-tools.ps1",
         "./scripts/enable-rdp.ps1",
         "./scripts/disable-hibernate.ps1",
         "./scripts/disable-autologin.ps1",
         "./scripts/disable-uac.ps1",
         "./scripts/no-expiration.ps1",
-        "./scripts/install-openjdk.ps1",
         "./scripts/install-choco.ps1",
         "./scripts/install-sysmon.ps1",
         "./scripts/install-pwshssh.ps1",
         "./scripts/install-advaudit.ps1",
         "./scripts/disable-windef.ps1",
         "./scripts/fix-invokeweb-secure-channel.ps1",
-        "./scripts/install-shutup10.ps1",
         "./scripts/cleanout.ps1",
         "./scripts/debloater.ps1"
       ],
       "type": "powershell"
-    },
-    {
-      "restart_check_command": "powershell -command \"\u0026 {if ((get-content C:\\ProgramData\\lastboot.txt) -eq (Get-WmiObject win32_operatingsystem).LastBootUpTime) {Write-Output 'Sleeping for 600 seconds to wait for reboot'; start-sleep 600} else {Write-Output 'Reboot complete'}}\"",
-      "restart_command": "powershell \"\u0026 {(Get-WmiObject win32_operatingsystem).LastBootUpTime > C:\\ProgramData\\lastboot.txt; Restart-Computer -force}\"",
-      "type": "windows-restart"
     },
     {
       "scripts": [
