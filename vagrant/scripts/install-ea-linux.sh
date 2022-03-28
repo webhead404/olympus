@@ -34,7 +34,7 @@ function get_enrollment_token() {
     declare -a AUTH=()
     declare -a HEADERS=(
         "-H" "Content-Type: application/json",
-        "-H" "kbn-xsrf: 7.14.0"
+        "-H" "kbn-xsrf: 8.1.0"
     )
 
     if [ -n "${KIBANA_AUTH}" ]; then

@@ -8,14 +8,16 @@
       "boot_command": [
         "<esc><wait>",
         "install <wait>",
+        "auto=true priority=critical interface=enp0s3",
+        " <wait>",
+        "netcfg/get_hostname={{ .Name }} <wait>",
+        " <wait>",
         "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg <wait>",
         "debian-installer=en_US.UTF-8 <wait>",
         "auto <wait>",
         "locale=en_US.UTF-8 <wait>",
         "kbd-chooser/method=us <wait>",
         "keyboard-configuration/xkb-keymap=us <wait>",
-        "netcfg/get_hostname={{ .Name }} <wait>",
-        "netcfg/get_domain=thremulator.io <wait>",
         "fb=false <wait>",
         "debconf/frontend=noninteractive <wait>",
         "console-setup/ask_detect=false <wait>",
@@ -29,9 +31,9 @@
       "headless": true,
       "http_directory": "http",
       "iso_urls": [
-        "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-11.2.0-amd64-netinst.iso"
+        "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-11.1.0-amd64-netinst.iso"
       ],
-        "iso_checksum": "45c9feabba213bdc6d72e7469de71ea5aeff73faea6bfb109ab5bad37c3b43bd",
+        "iso_checksum": "8488abc1361590ee7a3c9b00ec059b29dfb1da40f8ba4adf293c7a30fa943eb2",
         "ssh_username": "vagrant",
         "ssh_password": "vagrant",
         "ssh_port": 22,
@@ -41,6 +43,12 @@
         "virtualbox_version_file": ".vbox_version",
         "vm_name": "packer-elastic",
         "vboxmanage": [
+          [
+            "modifyvm",
+            "{{.Name}}",
+            "--nic2",
+            "intnet"
+          ],
           [
             "modifyvm",
             "{{.Name}}",
@@ -65,6 +73,7 @@
         "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E sh -eux '{{.Path}}'",
         "expect_disconnect": true,
         "scripts": [
+        "scripts/set_interface.sh",
         "scripts/update.sh",
         "scripts/sshd.sh",
         "scripts/networking.sh",

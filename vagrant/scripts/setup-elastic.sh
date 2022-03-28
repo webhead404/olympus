@@ -153,7 +153,7 @@ function create_fleet_user() {
         fi
         printf '.'
         attempt_counter=$((attempt_counter+1))
-        sleep 5
+        sleep 15
     done
 }
 
@@ -161,13 +161,13 @@ function create_fleet_user() {
 function configure_fleet_outputs() {
     printf '{"fleet_server_hosts": ["%s"]}' "${FLEET_SERVER_URL}" | curl --silent -XPUT "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/settings" -d @- | jq
 
-    OUTPUT_ID="$(curl --silent -XGET "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/outputs" | jq --raw-output '.items[] | select(.name == "default") | .id')"
-    printf '{"hosts": ["%s"]}' "${ELASTICSEARCH_URL}" | curl --silent -XPUT "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/outputs/${OUTPUT_ID}" -d @- | jq
+    OUTPUT_ID="$(curl --silent -XGET "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/outputs" | jq --raw-output '.items[] | select(.name == "Default policy") | .id')"
+    #printf '{"hosts": ["%s"]}' "${ELASTICSEARCH_URL}" | curl --silent -XPUT "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/outputs/${OUTPUT_ID}" -d @- | jq
 }
 
 # Configure Elasticsearch Index Replicas
 function configure_index_replicas() {
-    curl --silent "${HEADERS[@]}" -XPUT "${ELASTICSEARCH_URL}"/*/_settings -d '{ "index" : { "number_of_replicas" : 0 } }' | jq
+    curl -k --silent "${HEADERS[@]}" -XPUT "${ELASTICSEARCH_URL}"/*/_settings -d '{ "index" : { "number_of_replicas" : 0 } }' | jq
 }
 
 # Add Detection Engine Index"

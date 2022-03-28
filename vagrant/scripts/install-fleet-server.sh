@@ -5,7 +5,7 @@ set -o pipefail
 STACK_VER="${ELASTIC_STACK_VERSION:-7.14.0}"
 KIBANA_URL="${KIBANA_URL:-http://127.0.0.1:5601}"
 KIBANA_AUTH="${KIBANA_AUTH:-}"
-ELASTICSEARCH_URL="${ELASTICSEARCH_URL:-http://127.0.0.1:9200}"
+ELASTICSEARCH_URL="${ELASTICSEARCH_URL:-https://127.0.0.1:9200}"
 ES_SERVICE="elasticsearch"
 KIBANA_SERVICE="kibana"
 
@@ -70,6 +70,14 @@ function download_and_install_agent () {
     echo "Setting up Fleet Server. This could take a minute.."
     curl --silent -XPOST "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/setup" | jq
 
+    echo "Creating a default Fleet Server policy"
+
+    curl --silent -XPOST "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/agent_policies" -d '{"name":"Default Fleet Server policy","description":"","namespace":"default","monitoring_enabled":["metrics","logs"],"has_fleet_server":true}'
+
+    echo "Creating a Default Policy for Agents"
+     curl --silent -XPOST "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/agent_policies?sys_monitoring=true" -d '{"name":"Default policy","description":"","namespace":"default","monitoring_enabled":["metrics","logs"],"has_fleet_server":false}'
+
+
     POLICY_ID=$(curl --silent -XGET "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/agent_policies" | jq --raw-output '.items[] | select(.name | startswith("Default Fleet")) | .id')
 
     SERVICE_TOKEN=$(curl --silent -XPOST "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/service-tokens" | jq -r '.value')
@@ -81,7 +89,7 @@ function download_and_install_agent () {
     cd "$(mktemp -d)"
     curl --silent -LJ "${AGENT_URL}" | tar xzf -
     cd "$(basename "$(basename "${AGENT_URL}")" .tar.gz)"
-    sudo ./elastic-agent install -f --fleet-server-es="${ELASTICSEARCH_URL}" --fleet-server-service-token="${SERVICE_TOKEN}" --fleet-server-policy "${POLICY_ID}"
+    sudo ./elastic-agent install -f --fleet-server-es="${ELASTICSEARCH_URL}" --fleet-server-service-token="${SERVICE_TOKEN}" --fleet-server-policy "${POLICY_ID}" --fleet-server-es-insecure
     
     # Cleanup temporary directory
     cd ..
