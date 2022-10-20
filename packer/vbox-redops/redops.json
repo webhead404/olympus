@@ -1,6 +1,6 @@
 {
   "variables": {
-    "version": "6.1.26"
+    "version": "6.1.34"
   },
   "builders": [
     {
@@ -29,9 +29,9 @@
       "headless": true,
       "http_directory": "http",
       "iso_urls": [
-        "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-11.1.0-amd64-netinst.iso"
+        "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-11.4.0-amd64-netinst.iso"
       ],
-        "iso_checksum": "8488abc1361590ee7a3c9b00ec059b29dfb1da40f8ba4adf293c7a30fa943eb2",
+        "iso_checksum": "d490a35d36030592839f24e468a5b818c919943967012037d6ab3d65d030ef7f",
         "ssh_username": "vagrant",
         "ssh_password": "vagrant",
         "ssh_port": 22,

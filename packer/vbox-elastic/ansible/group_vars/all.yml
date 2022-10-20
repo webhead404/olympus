@@ -1,4 +1,4 @@
 ---
 # Elastic version management
 lab:
-   stack_version: "8.1.0"
+   stack_version: "8.3.3"
