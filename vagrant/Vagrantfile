@@ -1,8 +1,17 @@
+$set_operator_variables = <<SCRIPT
+tee "/etc/profile.d/operator_vars.sh" > "/dev/null" <<EOF
+# Operator variables
+export operator_session_key=#{ENV['operator_session_key']}
+export operator_login_email=#{ENV['operator_login_email']}
+export operator_login_token=#{ENV['operator_login_token']}
+EOF
+SCRIPT
+
 Vagrant.configure("2") do |config|
 
   config.vm.define "ts.elastic", primary: true do |cfg|
     cfg.vm.box = "dev-elastic-8"
-    #cfg.vm.box_version = "0.9.30"
+    #cfg.vm.box_version = "1.2.0"
     cfg.vm.hostname = "elastic"
     cfg.disksize.size = "256GB"
     cfg.vm.synced_folder '.', '/vagrant', disabled: true
@@ -33,7 +42,7 @@ Vagrant.configure("2") do |config|
     cfg.vm.provision "shell" do |s|
       s.path = "../vagrant/scripts/install-fleet-server.sh"
       s.env = {
-          "ELASTIC_STACK_VERSION" => "8.1.0",
+          "ELASTIC_STACK_VERSION" => "8.4.0",
           "KIBANA_URL" => "http://192.168.56.10:5601",
           "KIBANA_AUTH" => "vagrant:vagrant",
           "ELASTICSEARCH_URL" => "https://192.168.56.10:9200"
@@ -44,7 +53,7 @@ Vagrant.configure("2") do |config|
     cfg.vm.provision "shell" do |s2|
       s2.path = "../vagrant/scripts/setup-elastic.sh"
       s2.env = {
-        "ELASTIC_STACK_VERSION" => "8.1.0",
+        "ELASTIC_STACK_VERSION" => "8.4.0",
         "KIBANA_URL" => "http://192.168.56.10:5601",
         "KIBANA_AUTH" => "vagrant:vagrant",
         "ELASTICSEARCH_URL" => "https://192.168.56.10:9200",
@@ -56,8 +65,8 @@ Vagrant.configure("2") do |config|
 
 
   config.vm.define "ts.windows10" do |cfg|
-    cfg.vm.box = "dev-windows10"
-    #cfg.vm.box_version = "0.9.30"
+    cfg.vm.box = "windows"
+    #cfg.vm.box_version = "1.2.0"
     cfg.vm.hostname = "windows10"
     cfg.vm.network "private_network", ip: "192.168.56.11", auto_config: true
 
@@ -73,15 +82,24 @@ Vagrant.configure("2") do |config|
 
     cfg.vm.provision "exprfix", type: "shell", path: "../vagrant/scripts/fix-windows-expiration.ps1"
     cfg.vm.provision "shutup10", type: "shell", path: "../vagrant/scripts/install-shutup10config.ps1"
-    cfg.vm.provision "installea", type: "shell", path: "../vagrant/scripts/install-ea.ps1"
+    cfg.vm.provision "shell" do |s|
+      s.path = "../vagrant/scripts/install-ea.ps1"
+      s.env = {
+        "ELASTIC_STACK_VERSION" => '8.4.0',
+        "KIBANA_URL" => 'http://192.168.56.10:5601',
+        "KIBANA_AUTH" => 'vagrant:vagrant',
+        "ELASTICSEARCH_URL" => 'https://192.168.56.10:9200',
+        "FLEET_SERVER_URL" => 'https://192.168.56.10:8220'
+      }
+    end
     cfg.vm.provision "download-install-pneuma-windows", type: "shell", path: "../vagrant/scripts/download-pneuma-windows.ps1"
   end
 
 
 
   config.vm.define "ts.debian11" do |cfg|
-    cfg.vm.box = "dev-debian11"
-    #cfg.vm.box_version = "0.9.30"
+    cfg.vm.box = "debian11"
+    #cfg.vm.box_version = "1.2.0"
     cfg.vm.hostname = "debian11"
     cfg.vm.synced_folder '.', '/vagrant', disabled: true
     cfg.vm.network "private_network", ip: "192.168.56.12", auto_config: true
@@ -106,7 +124,7 @@ Vagrant.configure("2") do |config|
     cfg.vm.provision "shell" do |s|
       s.path = "../vagrant/scripts/install-ea-linux.sh"
       s.env = {
-        "ELASTIC_STACK_VERSION" => "8.1.0",
+        "ELASTIC_STACK_VERSION" => "8.4.0",
         "KIBANA_URL" => "http://192.168.56.10:5601",
         "KIBANA_AUTH" => "vagrant:vagrant",
         "ELASTICSEARCH_URL" => "https://192.168.56.10:9200",
@@ -122,12 +140,16 @@ Vagrant.configure("2") do |config|
 
 
   config.vm.define "ts.redops" do |cfg|
-    cfg.vm.box = "dev-redops"
-    #cfg.vm.box_version = "0.9.30"
+    cfg.vm.box = "redops"
+    #cfg.vm.box_version = "1.2.0"
     cfg.vm.hostname = "redops"
     cfg.vm.synced_folder ".", "/vagrant", type: "rsync"
     cfg.vm.network "private_network", ip: "192.168.56.13", auto_config: true
     cfg.vm.network "forwarded_port", guest: 3389, host: 43389
+    cfg.vm.network "forwarded_port", guest: 50051, host: 50052
+    cfg.vm.network "forwarded_port", guest: 8888, host: 8889
+
+
     cfg.vm.provider :virtualbox do |vb|
       vb.name = "ts.redops"
       vb.memory = 2048
@@ -136,9 +158,24 @@ Vagrant.configure("2") do |config|
     end
 
     # Fix Local DNS
-    cfg.vm.provision "set-hosts-file", type: "shell", inline: "printf '\n127.0.0.1  redops`' >> /etc/hosts"
+    cfg.vm.provision "set-hosts-file", type: "shell", inline: "printf '\n127.0.0.1  redops' >> /etc/hosts"
+
+    cfg.vm.provision "set-operator-vars", type: "shell", inline: $set_operator_variables, run: "always"
+
+    cfg.vm.provision "install-operator-headless", type: "shell", path: "../vagrant/scripts/install-headless.sh"
+    cfg.vm.provision "set-go-vars", type: "shell", inline: <<-SHELL
+    echo -n                                          >  /etc/profile.d/gopath.sh
+    echo 'export GOROOT=/usr/local/go'                 >> /etc/profile.d/gopath.sh
+    echo 'export GOPATH=/home/vagrant/go'             >> /etc/profile.d/gopath.sh
+    echo 'export PATH=$PATH:$GOROOT/bin:$GOPATH/bin' >> /etc/profile.d/gopath.sh
+SHELL
+
+
+    
+
+    cfg.vm.provision "compile-and-stage-agents", type: "shell", path: "../vagrant/scripts/garble.sh", privileged: false
+  end
 
     # Install Operator
-    cfg.vm.provision "install-operator", type: "shell", path: "../vagrant/scripts/install-operator.sh"
-  end
+    #cfg.vm.provision "install-operator", type: "shell", path: "../vagrant/scripts/install-operator.sh"
 end
