@@ -1,5 +1,4 @@
 # Build authentication information for later requests
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $user = "vagrant"
 $password = "vagrant"
 $credential = "${user}:${password}"
@@ -10,60 +9,36 @@ $headers = @{
   "Authorization" = $basicAuthHeader;
   "kbn-xsrf"      = "reporting"
 }
-$kibana_url = "http://192.168.56.10:5601"
-$elasticsearch_url = "https://192.168.56.10:9200"
-$fleet_server_url = "https://192.168.56.10:8220"
+ Write-Output "Here is the stack version: $env:ELASTIC_STACK_VERSION"
+ Write-Output "Here is the Kibana URL: $env:KIBANA_URL"
+ Write-Output "Here is the auth: $env:KIBANA_AUTH"
+ Write-Output "Here is the Fleet URL: $env:FLEET_SERVER_URL"
 
+#$env:ELASTICSEARCH_URL
+#$env:FLEET_SERVER_URL
 
-if (-not ([System.Management.Automation.PSTypeName]'ServerCertificateValidationCallback').Type)
-{
-$certCallback=@"
-    using System;
-    using System.Net;
-    using System.Net.Security;
-    using System.Security.Cryptography.X509Certificates;
-    public class ServerCertificateValidationCallback
-    {
-        public static void Ignore()
-        {
-            if(ServicePointManager.ServerCertificateValidationCallback ==null)
-            {
-                ServicePointManager.ServerCertificateValidationCallback += 
-                    delegate
-                    (
-                        Object obj, 
-                        X509Certificate certificate, 
-                        X509Chain chain, 
-                        SslPolicyErrors errors
-                    )
-                    {
-                        return true;
-                    };
-            }
-        }
-    }
-"@
-    Add-Type $certCallback
- }
-[ServerCertificateValidationCallback]::Ignore();
+#$kibana_url = "http://192.168.56.10:5601"
+#$elasticsearch_url = "https://192.168.56.10:9200"
+#$fleet_server_url = "https://192.168.56.10:8220"
 
 
 
 
 # Retrieve Stack Version
-Invoke-WebRequest -Headers $headers -UseBasicParsing -Uri $elasticsearch_url -OutFile version.json
-$agent_version = (Get-Content 'version.json' | ConvertFrom-Json).version.number
+#Invoke-WebRequest -Headers $headers -UseBasicParsing -Uri $elasticsearch_url -OutFile version.json
+#$agent_version = (Get-Content 'version.json' | ConvertFrom-Json).version.number
 
 # Get correct policy ID
 Write-Output "Get Default Policy"
-$AgentPolicyList = (ConvertFrom-Json(Invoke-WebRequest -UseBasicParsing -Uri "$kibana_url/api/fleet/agent_policies" -ContentType "application/json" -Headers $headers -Method GET))
+$AgentPolicyList = (ConvertFrom-Json(Invoke-WebRequest -UseBasicParsing -Uri "$env:KIBANA_URL/api/fleet/agent_policies" -ContentType "application/json" -Headers $headers -Method GET))
 $DefaultPolicyID = ($AgentPolicyList.items[0,1] | where {$_.name -eq "Default policy"})
 $ActualPolicyID = ($DefaultPolicyID.id)
 
+Write-Output "The policy ID is: $ActualPolicyID"
 
 # Get Body of Fleet Enrollment API Key
 Write-Output "Get Enrollment API Key"
-$ApiKeyPolicyID = (ConvertFrom-Json(Invoke-WebRequest -UseBasicParsing -Uri "$kibana_url/api/fleet/enrollment-api-keys" -ContentType "application/json" -Headers $headers -Method GET))
+$ApiKeyPolicyID = (ConvertFrom-Json(Invoke-WebRequest -UseBasicParsing -Uri "$env:KIBANA_URL/api/fleet/enrollment_api_keys" -ContentType "application/json" -Headers $headers -Method GET))
 $DefaultPolicy_ID_ApiKey = ($ApiKeyPolicyID.list[0,1] | where policy_id -eq $ActualPolicyID)
 $fleetToken = ($DefaultPolicy_ID_ApiKey.api_key)
 
@@ -72,7 +47,7 @@ $fleetToken = ($DefaultPolicy_ID_ApiKey.api_key)
 ### Configure Elastic Agent on host ###################################
 
 # TODO: Clean up the temporary file artifacts
-$elasticAgentUrl = "https://artifacts.elastic.co/downloads/beats/elastic-agent/elastic-agent-$agent_version-windows-x86_64.zip"
+$elasticAgentUrl = "https://artifacts.elastic.co/downloads/beats/elastic-agent/elastic-agent-$env:ELASTIC_STACK_VERSION-windows-x86_64.zip"
 $agent_install_folder = "C:\Program Files"
 $install_dir = "C:\Agent"
 New-Item -Path $install_dir -Type directory | Out-Null
@@ -82,16 +57,16 @@ if (!(Test-Path $agent_install_folder)) {
 }
 Write-Output "Downloading Elastic Agent"
 $ProgressPreference = 'silentlyContinue'
-Invoke-WebRequest -UseBasicParsing -Uri $elasticAgentUrl -OutFile "$install_dir\elastic-agent-$agent_version-windows-x86_64.zip"
+Invoke-WebRequest -UseBasicParsing -Uri $elasticAgentUrl -OutFile "$install_dir\elastic-agent-$env:ELASTIC_STACK_VERSION-windows-x86_64.zip"
 Write-Output "Installing Elastic Agent..."
-Write-Output "Unzipping Elastic Agent from $agent_install_folder\elastic-agent-$agent_version-windows-x86_64.zip to $agent_install_folder"
-Expand-Archive -literalpath $install_dir\elastic-agent-$agent_version-windows-x86_64.zip -DestinationPath $agent_install_folder
+Write-Output "Unzipping Elastic Agent from $agent_install_folder\elastic-agent-$env:ELASTIC_STACK_VERSION-windows-x86_64.zip to $agent_install_folder"
+Expand-Archive -literalpath $install_dir\elastic-agent-$env:ELASTIC_STACK_VERSION-windows-x86_64.zip -DestinationPath $agent_install_folder
 
-Rename-Item "$agent_install_folder\elastic-agent-$agent_version-windows-x86_64" "$agent_install_folder\Elastic-Agent"
+Rename-Item "$agent_install_folder\elastic-agent-$env:ELASTIC_STACK_VERSION-windows-x86_64" "$agent_install_folder\Elastic-Agent"
 
-Write-Output "Running enroll process of Elastic Agent with token: $fleetToken at url: $kibana_url"
+Write-Output "Running enroll process of Elastic Agent with token: $fleetToken at url: $env:KIBANA_URL"
 Set-Location 'C:\Program Files\Elastic-Agent'
-.\elastic-agent.exe install -f --insecure --url=$fleet_server_url --enrollment-token=$fleetToken
+.\elastic-agent.exe install -f --insecure --url=$env:FLEET_SERVER_URL --enrollment-token=$fleetToken
 
 # Ensure Elastic Agent is started
 if ((Get-Service "Elastic Agent") -eq "Stopped") {

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PNEUMA_URL="https://s3.amazonaws.com/operator.payloads.open/payloads/pneuma/pneuma-linux"
+PNEUMA_URL="http://192.168.56.13:3391/payloads/pneuma/v1.5/pneuma-linux"
 INSTALL_DIR="/opt/pneuma"
 SCRIPTS_DIR="/vagrant"
 
@@ -8,6 +8,7 @@ SCRIPTS_DIR="/vagrant"
 
 cd "$(mktemp -d)"
 curl $PNEUMA_URL -o pneuma-agent
+curl
 mkdir $INSTALL_DIR
 cp pneuma-agent $INSTALL_DIR
 chmod +x $INSTALL_DIR/pneuma-agent
@@ -31,4 +32,4 @@ cp pneuma-agent.service /etc/systemd/system
 systemctl enable pneuma-agent
 
 #Only enable this if you want pneuma started by default.
-#systemctl start pneuma-agent
+systemctl start pneuma-agent

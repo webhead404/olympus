@@ -72,7 +72,7 @@ function clear_siem_alerts() {
        }
      }'
    )
-    echo -n "${SIEM_SIGNALS_CLEARED}"
+    #echo -n "${SIEM_SIGNALS_CLEARED}"
 }
 
 install_jq
