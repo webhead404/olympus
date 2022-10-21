@@ -81,7 +81,7 @@ main() {
         echo -e "${LIGHTPURPLE}  _\ \/ __/ _ \/ __/ / _ \/ _ \ ${NC}    Memory used: $MEM     ";
         echo -e "${LIGHTPURPLE} /___/\__/\_,_/\__/_/\___/_//_/ ${NC}    Disk usage.: $DISK    ";
         echo ""
-        echo -e "${LIGHTPURPLE}  ATTACK with Atomic <-----------> DETECT with Elastic${NC}"
+        echo -e "${LIGHTPURPLE}  ATTACK with Operator <-----------> DETECT with Elastic${NC}"
         echo -e "${LIGHTPURPLE} ------------------------------------------------------${NC}";
         echo -e ""
         echo -e " 1. Setup........:  install dependencies (${ORANGE}experimental${NC})"
@@ -490,7 +490,7 @@ deploy_custom() {
         echo -e "${LIGHTPURPLE}     (B)ack to Main                           ${NC}";
         echo -e "${LIGHTPURPLE} ---------------------------------------------${NC}";
         echo ""
-        echo "The Elastic (control) box is required."
+        echo "The Elastic and Redops boxes are required."
         echo "What TARGET boxes would you like to deploy?"
         echo ""
         read -rp "Deploy the Windows10 target? [Y/N]: " yn
@@ -527,37 +527,19 @@ deploy_custom() {
         echo -e "${LIGHTPURPLE}     (B)ack to Main                           ${NC}";
         echo -e "${LIGHTPURPLE} ---------------------------------------------${NC}";
         echo ""
-        read -rp "Deploy the Redops (redteam) adversary box? [Y/N]: " yn
-        case $yn in
-            [Yy]* ) REDOPS="ts.redops"; break;;
-            [Nn]* ) REDOPS=""; break;;
-            [Bb]* ) clear; deploy; break;;
-            * ) echo -e "\n${RED} Selection invalid, try again:${NC} "; sleep 2;;
-        esac
-    done
-    while true; do
-        clear
-        echo -e "${LIGHTPURPLE}      __________  ___           __            ${NC}";
-        echo -e "${LIGHTPURPLE}     /_  __/ __/ / _ \___ ___  / /__  __ __   ${NC}";
-        echo -e "${LIGHTPURPLE}      / / _\ \  / // / -_) _ \/ / _ \/ // /   ${NC}";
-        echo -e "${LIGHTPURPLE}     /_/ /___/ /____/\__/ .__/_/\___/\_, /    ${NC}";
-        echo -e "${LIGHTPURPLE}                       /_/          /___/     ${NC}";
-        echo -e "${LIGHTPURPLE}     (B)ack to Main                           ${NC}";
-        echo -e "${LIGHTPURPLE} ---------------------------------------------${NC}";
-        echo ""
         echo ""
         echo " You have chosen the following Custom Deployment:"
         echo ""
-        echo " - CONTROL..: "${ELASTIC}" (required)"
+        echo " - STACK..: "${ELASTIC}" (required)"
+        echo " - CONTROL...: "${REDOPS}" (required)"
         echo " - target...: "${WINDOWS}""
         echo " - target...: "${DEBIAN}""
-        echo " - redops...: "${REDOPS}""
         echo ""
         read -rp "Confirm to proceed with deployment [Y/N]: " yn
         case $yn in
             [Yy]* )
-                echo "You have chosen the "${ELASTIC}" "${WINDOWS}" "${DEBIAN}" "${REDOPS}""
-                vagrant up ${ELASTIC} ${WINDOWS} ${DEBIAN} ${REDOPS};
+                echo "You have chosen the "${ELASTIC}" "${REDOPS}" "${WINDOWS}" "${DEBIAN}""
+                vagrant up ${ELASTIC} ${REDOPS} ${WINDOWS} ${DEBIAN};
                 sleep 10;
                 snapshot;
                 break;;
@@ -642,10 +624,10 @@ deploy_staged() {
         echo ""
         echo "  You have chosen to Pre-stage the following boxes:"
         echo ""
-        echo "  - CONTROL..: ${ELASTIC}"
+        echo "  - STACK..: ${ELASTIC}"
         echo "  - target...: ${WINDOWS}"
         echo "  - target...: ${DEBIAN}"
-        echo "  - redops...: "${REDOPS}""
+        echo "  - CONTROL...: "${REDOPS}""
         echo ""
         read -rp "  Confirm to proceed with pulling the above [Y/N]: " yn
         case $yn in
@@ -771,7 +753,7 @@ delete_indexes() {
 }
 
 delete_signals() {
-    curl -H "Content-Type: application/json" -X POST "192.168.56.10:9200/.siem-signals-default-*/_delete_by_query" -d \
+    curl -H "Content-Type: application/json" -XPOST "https://192.168.56.10:9200/.siem-signals-default-*/_delete_by_query" -k -u vagrant:vagrant -d \
                 '{
                     "query": {
                         "match": {
