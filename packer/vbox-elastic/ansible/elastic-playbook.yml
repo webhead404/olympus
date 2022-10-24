@@ -7,7 +7,6 @@
       vagrant:
         user: "vagrant"
         password: "{{ bootstrap_password }}"
-        role: "thremulator"
       header:
         content: "{{ 'Content-Type: application/json' }}"
         kbn: "{{ 'kbn-xsrf: true' }}"
@@ -52,6 +51,7 @@
           - tmux
           - git
           - golang
+          - dos2unix
           - wget
           - apt-transport-https
 
@@ -83,6 +83,14 @@
       ufw:
         rule: allow
         port: '8220'
+        proto: tcp
+        state: enabled
+
+    - name: Add AtomicGUI Firewall Rule
+      ufw:
+        rule: allow
+        port: '8487'
+        proto: tcp
         state: enabled
 
     - name: Add SSH Rule for Vagrant
@@ -101,31 +109,6 @@
       apt:
         name: elasticsearch={{ lab.stack_version }}
         state: present
-
-    - name: Elasticsearch Vagrant User tasks
-      block:
-
-        #- name: Create the Elasticsearch Keystore
-        #  command: "/usr/share/elasticsearch/bin/elasticsearch-keystore create"
-        #  args:
-        #    creates: "/etc/elasticsearch/elasticsearch.keystore"
-
-        #- name: Check if Bootstrap Password is Set
-        #  command: /usr/share/elasticsearch/bin/elasticsearch-keystore list
-        #  register: list_es_keystore
-        #  changed_when: False
-        #  check_mode: false
-
-        #- name: Set Bootstrap Password
-        #  command: /usr/share/elasticsearch/bin/elasticsearch-keystore add -x bootstrap.password
-        #  when: "'bootstrap.password' not in list_es_keystore.stdout_lines"
-        #  no_log: true
-        #  register: es_keystore
-        #  args:
-        #    stdin: "{{ bootstrap_password | quote }}"
-
-        - name: Create Vagrant Superuser
-          command: "/usr/share/elasticsearch/bin/elasticsearch-users useradd {{ vagrant.user }} -p {{ vagrant.password }} -r {{ vagrant.role }}"
 
     - name: Create Default Directory
       file:
@@ -163,11 +146,6 @@
         # group: root
         # mode: '0644'
 
-    #- name: Make Cert Directory
-    #  file:
-    #    path: /etc/elasticsearch/certs
-    #    state: directory
-
     - name: Confirm Directory Permissions
       file:
         path: /etc/elasticsearch
@@ -184,18 +162,18 @@
         group: elasticsearch
         mode: '0660'
 
+    - name: Copy Patched Elasticsearch Env file
+      copy:
+        src: ./files/elasticsearch-env
+        dest: /usr/share/elasticsearch/bin/elasticsearch-env
+        owner: elasticsearch
+        group: elasticsearch
+        mode: '0660'
 
-    #- name: Copy Elasticsearch Cert
-    #  copy:
-    #    src: ./files/elastic.p12
-    #    dest: /etc/elasticsearch/certs
-    #    owner: elasticsearch
-    #    group: elasticsearch
-    #    mode: '0660'
-      #loop: 
-      #  - client.cer
-      #  - client.key
 
+    - name: Make sure file is UNIX formatted
+      command: dos2unix /usr/share/elasticsearch/bin/elasticsearch-env
+    
     - name: Start and Enable Elasticsearch
       systemd: 
         name: elasticsearch
@@ -206,36 +184,32 @@
       shell: /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic -a -b -s
       register: es_password
 
-    - name: Create a role for Vagrant (since superuser isn't super anymore)
-      #no_log: true
+    - name: Reset Kibana_system password
+      shell: /usr/share/elasticsearch/bin/elasticsearch-reset-password -u kibana_system -a -b -s
+      register: kibana_password
+
+
+    - name: Create Vagrant user
       uri:
-        url: https://localhost:9200/_security/role/thremulator?pretty
+        url: https://localhost:9200/_security/user/vagrant
         validate_certs: false
         user: elastic
         password: "{{ es_password.stdout }}"
         method: POST
-        body: "{{ lookup('file','create_role.json') }}"
+        body: "{{ lookup('file','create_vagrant_user.json') }}"
         force_basic_auth: yes
         body_format: json
         headers:
-          Content-Type: "application/json" 
+          Content-Type: "application/json"
 
-    #- name: Create a Tmp directory to drop our token in
-    #  file: 
-    #    path: /tmp/token
-    #    state: directory
-
-    - name: Generate enrollment token for Kibana
-      shell: /usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s kibana
-      register: kibana_token
-
-
+    #- name: Generate enrollment token for Kibana
+    #  shell: /usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s kibana
+    #  register: kibana_token
 
     - name: Install Kibana
       apt:
         name: kibana={{ lab.stack_version }}
         state: present
-
 
     - name: Update Kibana Config
       copy:
@@ -244,20 +218,30 @@
         owner: kibana
         group: kibana
 
-    #- name: Create Kibana Certs Directory
-    #  file:
-    #    path: /etc/kibana/certs
-    #    state: directory
+    - name: Create Kibana certs directory
+      file:
+        path: /etc/kibana/certs
+        state: directory
+        owner: kibana
+        group: kibana
+      
 
-    #- name: Copy Elasticsearch Certs For Kibana
-    #  copy:
-    #    src: ./files/elastic-stack-ca.pem
-    #    dest: /etc/kibana/certs
-    #    owner: kibana
-    #    group: kibana
-      #loop:
-      #  - client.cer
-      #  - client.key
+    - name: Copy Kibana CA cert
+      copy:
+        src: /etc/elasticsearch/certs/http_ca.crt
+        dest: /etc/kibana/certs/
+        owner: kibana
+        group: kibana
+        remote_src: yes
+
+    - name: Add Elasticsearch URL to Kibana config
+      blockinfile:
+        path: /etc/kibana/kibana.yml
+        block: |
+         elasticsearch.hosts: ['https://192.168.56.10:9200']
+         elasticsearch.username: kibana_system
+         elasticsearch.password: {{ kibana_password.stdout }}
+         elasticsearch.ssl.certificateAuthorities: [/etc/kibana/certs/http_ca.crt]
 
     - name: Confirm Directory Permissions
       file:
@@ -267,12 +251,8 @@
         owner: kibana
         group: kibana
   
-    #- name: Read in the enrollment key
-     # command: cat /tmp/token/enrollment-token
-     # register: kibana_token
-
-    - name: Set Enrollment Key
-      command: /usr/share/kibana/bin/kibana-setup --enrollment-token "{{ kibana_token.stdout }}"
+    #- name: Set Enrollment Key
+    #  command: /usr/share/kibana/bin/kibana-setup --enrollment-token "{{ kibana_token.stdout }}"
 
     - name: Start and Enable Kibana
       systemd: 

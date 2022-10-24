@@ -89,6 +89,12 @@
         "playbook_file": "ansible/elastic-playbook.yml"
         
       },
+
+      {
+        "type": "shell",
+        "scripts": "./scripts/install-atomicredteam.ps1"
+      },
+
       {
         "type": "shell",
         "scripts": [
