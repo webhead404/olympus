@@ -9,7 +9,7 @@ ELASTICSEARCH_URL="${ELASTICSEARCH_URL:-http://127.0.0.1:9200}"
 KIBANA_AUTH="${KIBANA_AUTH:-}"
 FLEET_SERVER_URL="${FLEET_SERVER_URL:-https://127.0.0.1:8220}"
 
-ENABLE_PACKAGES=("endpoint" "windows" "osquery_manager")
+ENABLE_PACKAGES=("endpoint" "osquery_manager")
 HEADERS=(
     -H "kbn-version: ${STACK_VER}"
     -H 'Content-Type: application/json'
@@ -163,6 +163,18 @@ function configure_fleet_outputs() {
 
     OUTPUT_ID="$(curl --silent -XGET "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/outputs" | jq --raw-output '.items[] | select(.name == "Default policy") | .id')"
     #printf '{"hosts": ["%s"]}' "${ELASTICSEARCH_URL}" | curl --silent -XPUT "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/outputs/${OUTPUT_ID}" -d @- | jq
+    #CA_TRUSTED_CERT="$(cat /etc/kibana/kibana.yml | grep xpack.fleet.outputs | cut -f7 -d , | cut -f2 -d : | sed 's|[},]]||g' | cut -f2 -d ' ')"
+    CA_TRUSTED_CERT_FINGERPRINT=$(cat /etc/kibana/certs/http_ca.crt | openssl x509 -noout -fingerprint -sha256 | cut -d "=" -f 2 | tr -d :)
+    curl --silent -XPUT "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/outputs/fleet-default-output" -d \
+    '{
+        "name":"default",
+        "type":"elasticsearch",
+        "hosts":["'${ELASTICSEARCH_URL}'"],
+        "is_default": true,
+        "is_default_monitoring": false,
+        "config_yaml":"ssl.verification_mode: certificate",
+        "ca_trusted_fingerprint":"'${CA_TRUSTED_CERT_FINGERPRINT}'"
+     }'
 }
 
 # Configure Elasticsearch Index Replicas

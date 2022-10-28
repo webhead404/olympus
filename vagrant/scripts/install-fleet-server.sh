@@ -70,9 +70,8 @@ function download_and_install_agent () {
     echo "Setting up Fleet Server. This could take a minute.."
     curl --silent -XPOST "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/setup" | jq
 
-    echo "Creating a default Fleet Server policy"
-
-    curl --silent -XPOST "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/agent_policies" -d '{"name":"Default Fleet Server policy","description":"","namespace":"default","monitoring_enabled":["metrics","logs"],"has_fleet_server":true}'
+    #echo "Creating a default Fleet Server policy"
+    #curl --silent -XPOST "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/agent_policies" -d '{"name":"Default Fleet Server policy","description":"","namespace":"default","monitoring_enabled":["metrics","logs"],"has_fleet_server":true}'
 
     echo "Creating a Default Policy for Agents"
      curl --silent -XPOST "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/agent_policies?sys_monitoring=true" -d '{"name":"Default policy","description":"","namespace":"default","monitoring_enabled":["metrics","logs"],"has_fleet_server":false}'
@@ -89,7 +88,8 @@ function download_and_install_agent () {
     cd "$(mktemp -d)"
     curl --silent -LJ "${AGENT_URL}" | tar xzf -
     cd "$(basename "$(basename "${AGENT_URL}")" .tar.gz)"
-    sudo ./elastic-agent install -f --fleet-server-es="${ELASTICSEARCH_URL}" --fleet-server-service-token="${SERVICE_TOKEN}" --fleet-server-policy "${POLICY_ID}" --fleet-server-es-insecure
+
+    sudo ./elastic-agent install -f --fleet-server-es="${ELASTICSEARCH_URL}" --fleet-server-service-token="${SERVICE_TOKEN}" --fleet-server-policy "${POLICY_ID}" --fleet-server-es-ca=/etc/kibana/certs/http_ca.crt --insecure
     
     # Cleanup temporary directory
     cd ..
