@@ -1,5 +1,6 @@
 # Build authentication information for later requests
-$user = "vagrant"
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$user = "elastic"
 $password = "vagrant"
 $credential = "${user}:${password}"
 $credentialBytes = [System.Text.Encoding]::ASCII.GetBytes($credential)
@@ -11,7 +12,7 @@ $headers = @{
 }
  Write-Output "Here is the stack version: $env:ELASTIC_STACK_VERSION"
  Write-Output "Here is the Kibana URL: $env:KIBANA_URL"
- Write-Output "Here is the auth: $env:KIBANA_AUTH"
+ #Write-Output "Here is the auth: $env:KIBANA_AUTH"
  Write-Output "Here is the Fleet URL: $env:FLEET_SERVER_URL"
 
 #$env:ELASTICSEARCH_URL
