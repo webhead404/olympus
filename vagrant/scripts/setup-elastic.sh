@@ -22,6 +22,13 @@ if [ -n "${KIBANA_AUTH}" ]; then
 fi
 
 curl -k --silent -XPOST "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/agent_policies?sys_monitoring=true" -d '{"name":"Default policy","description":"","namespace":"default","monitoring_enabled":["metrics","logs"],"has_fleet_server":false}'
+#curl -k --silent -XPUT "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/fleet_server_hosts/fleet-default-fleet-server-host" -d '{
+  #"name": "Default",
+  #"host_urls": [
+    #"https://192.168.56.10:8220"
+ # ],
+ # "is_default": true
+#}'
 
 
 # Collect integrations available deployment
@@ -144,29 +151,37 @@ function get_package_policy() {
 
 
 # Create Fleet User
-function create_fleet_user() {
-    printf '{"forceRecreate": "true"}' | curl -k --silent -XPOST "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/agents/setup" -d @- | jq
-    attempt_counter=0
-    max_attempts=5
-    until [ "$(curl -k --silent -XGET "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/agents/setup" | jq -c 'select(.isReady==true)' | wc -l)" -gt 0 ]; do
-        if [ ${attempt_counter} -eq ${max_attempts} ];then
-            echo "Max attempts reached"
-            exit 1
-        fi
-        printf '.'
-        attempt_counter=$((attempt_counter+1))
-        sleep 15
-    done
-}
+#function create_fleet_user() {
+#    printf '{"forceRecreate": "true"}' | curl -k --silent -XPOST "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/agents/setup" -d @- | jq
+#    attempt_counter=0
+#    max_attempts=5
+#    until [ "$(curl -k --silent -XGET "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/agents/setup" | jq -c 'select(.isReady==true)' | wc -l)" -gt 0 ]; do
+#        if [ ${attempt_counter} -eq ${max_attempts} ];then
+#            echo "Max attempts reached"
+#            exit 1
+#        fi
+#        printf '.'
+#        attempt_counter=$((attempt_counter+1))
+#        sleep 15
+#    done
+#}
 
 # Configure Fleet Output
 function configure_fleet_outputs() {
-    printf '{"fleet_server_hosts": ["%s"]}' "${FLEET_SERVER_URL}" | curl -k --silent -XPUT "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/settings" -d @- | jq
+    #printf '{"fleet_server_hosts": ["%s"]}' "${FLEET_SERVER_URL}" | curl -k --silent -XPUT "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/settings" -d @- | jq
+    curl -k --silent -XPUT "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/fleet_server_hosts/fleet-default-fleet-server-host" -d \
+    '{
+        "name": "Default",
+        "host_urls":["'${FLEET_SERVER_URL}'"],
+        "is_default": true
+     }'
+    #printf '{"fleet_server_hosts": ["%s"]}' "${FLEET_SERVER_URL}" | curl -k --silent -XPUT "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/settings" -d @- | jq
 
-    OUTPUT_ID="$(curl -k --silent -XGET "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/outputs" | jq --raw-output '.items[] | select(.name == "Default policy") | .id')"
+    #OUTPUT_ID="$(curl -k --silent -XGET "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/outputs" | jq --raw-output '.items[] | select(.name == "Default policy") | .id')"
     #printf '{"hosts": ["%s"]}' "${ELASTICSEARCH_URL}" | curl -k --silent -XPUT "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/outputs/${OUTPUT_ID}" -d @- | jq
     #CA_TRUSTED_CERT="$(cat /etc/kibana/kibana.yml | grep xpack.fleet.outputs | cut -f7 -d , | cut -f2 -d : | sed 's|[},]]||g' | cut -f2 -d ' ')"
-    CA_TRUSTED_CERT_FINGERPRINT=$(cat /etc/kibana/certs/http_ca.crt | openssl x509 -noout -fingerprint -sha256 | cut -d "=" -f 2 | tr -d :)
+    #CA_TRUSTED_CERT_FINGERPRINT=$(cat /etc/kibana/certs/http_ca.crt | openssl x509 -noout -fingerprint -sha256 | cut -d "=" -f 2 | tr -d :)
+    
     curl -k --silent -XPUT "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/outputs/fleet-default-output" -d \
     '{
         "name":"default",
@@ -174,8 +189,7 @@ function configure_fleet_outputs() {
         "hosts":["'${ELASTICSEARCH_URL}'"],
         "is_default": true,
         "is_default_monitoring": false,
-        "config_yaml":"ssl.verification_mode: certificate",
-        "ca_trusted_fingerprint":"'${CA_TRUSTED_CERT_FINGERPRINT}'"
+        "config_yaml":"ssl.verification_mode: certificate"
      }'
 }
 
@@ -185,30 +199,30 @@ function configure_index_replicas() {
 }
 
 # Add Detection Engine Index"
-function add_detection_engine_index() {
-    curl -k --silent "${HEADERS[@]}" -XPOST "${KIBANA_URL}"/api/detection_engine/index
-}
+#function add_detection_engine_index() {
+#    curl -k --silent "${HEADERS[@]}" -XPOST "${KIBANA_URL}"/api/detection_engine/index
+#}
 
 # Load Detection Engine Prebuilt Rules
-function add_detection_engine_rules() {
-    curl -k --silent "${HEADERS[@]}" -XPUT "${KIBANA_URL}"/api/detection_engine/rules/prepackaged
-}
+#function add_detection_engine_rules() {
+#    curl -k --silent "${HEADERS[@]}" -XPUT "${KIBANA_URL}"/api/detection_engine/rules/prepackaged
+#}
 
 # Enable Windows and Linux Detection Rules
-function enable_detection_rules() {
-    curl -k --silent -XPOST "${HEADERS[@]}" "${KIBANA_URL}/api/detection_engine/rules/_bulk_action" -d '{"query": "alert.attributes.tags: \"Windows\"","action": "enable"}'
-    curl -k --silent -XPOST "${HEADERS[@]}" "${KIBANA_URL}/api/detection_engine/rules/_bulk_action" -d '{"query": "alert.attributes.tags: \"Linux\"","action": "enable"}'
-}
+#function enable_detection_rules() {
+#    curl -k --silent -XPOST "${HEADERS[@]}" "${KIBANA_URL}/api/detection_engine/rules/_bulk_action" -d '{"query": "alert.attributes.tags: \"Windows\"","action": "enable"}'
+#    curl -k --silent -XPOST "${HEADERS[@]}" "${KIBANA_URL}/api/detection_engine/rules/_bulk_action" -d '{"query": "alert.attributes.tags: \"Linux\"","action": "enable"}'
+#}
 
 # Execute Fleet Funcionts
 function main() {
-    create_fleet_user
+    #create_fleet_user
     configure_fleet_outputs
     policy_id=$(get_default_policy)
     configure_index_replicas
-    add_detection_engine_index
-    add_detection_engine_rules
-    enable_detection_rules
+    #add_detection_engine_index
+    #add_detection_engine_rules
+    #enable_detection_rules
 
     # shellcheck disable=SC2068
     for item in ${ENABLE_PACKAGES[@]}; do
