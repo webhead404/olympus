@@ -70,11 +70,6 @@
           - docker-ce-cli
           - docker-compose-plugin
 
-    - name: Start Firewalld Service
-      systemd:
-        name: firewalld
-        state: started
-        enabled: yes
 
 ###################################
 # Firewall
@@ -110,22 +105,28 @@
         immediate: yes
         state: enabled
 
-    - name: Add AtomicGUI Firewall Rule
-      firewalld:
-        zone: public
-        port: 8487/tcp
-        permanent: yes
-        immediate: yes
-        state: enabled
+    #- name: Add AtomicGUI Firewall Rule
+    #  firewalld:
+    #    zone: public
+    #    port: 8487/tcp
+    #    permanent: yes
+    #    immediate: yes
+    #    state: enabled
 
-    - name: Add Caldera Firewall Rule
-      firewalld:
-        zone: public
-        port: 8888/tcp
-        permanent: yes
-        immediate: yes
-        state: enabled
+    #- name: Add Caldera Firewall Rule
+    #  firewalld:
+    #    zone: public
+    #    port: 8888/tcp
+    #    permanent: yes
+    #    immediate: yes
+    #    state: enabled
 
+# Elastic Container Project
+
+    - name: Download ECP
+      git:
+    repo: https://github.com/peasead/elastic-container
+    dest: /home/vagrant/
 
 ###################################
 # Powershell

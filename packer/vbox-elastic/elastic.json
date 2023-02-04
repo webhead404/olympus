@@ -47,6 +47,7 @@
         "type": "ansible",
         "playbook_file": "ansible/elastic-playbook.yml"
       },
+
       {
         "type": "shell",
         "scripts": "scripts/cleanup.sh",
