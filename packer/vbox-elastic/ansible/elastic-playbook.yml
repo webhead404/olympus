@@ -11,7 +11,8 @@
         key: "{{ item }}"
       loop:
         - https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
-        - https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        #- https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        - https://download.docker.com/linux/centos/gpg
 
     - name: Add EPEL Repository
       yum:
@@ -29,10 +30,12 @@
 
     - name: Add Docker Repository
       yum_repository:
-        name: docker
+        name: docker-ce
+        description: Docker repository for docker-ce
         enabled: yes
+        module_hotfixes: true
         gpgcheck: yes
-        baseurl: https://download.docker.com/linux/centos
+        baseurl: https://download.docker.com/linux/centos/7/x86_64/stable
         gpgkey: https://download.docker.com/linux/centos/gpg
 
     - name: Add Microsoft Repository
@@ -62,9 +65,9 @@
           - wget
           - golang
           - bzip2
+          - containerd.io
           - docker-ce 
-          - docker-ce-cli 
-          - containerd.io 
+          - docker-ce-cli
           - docker-compose-plugin
 
     - name: Start Firewalld Service
