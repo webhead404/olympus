@@ -1,336 +1,127 @@
 ---
   - hosts: all
-    become: true
-    gather_facts: false
-    vars:
-      bootstrap_password: "vagrant"
-      vagrant:
-        user: "vagrant"
-        password: "{{ bootstrap_password }}"
-      header:
-        content: "{{ 'Content-Type: application/json' }}"
-        kbn: "{{ 'kbn-xsrf: true' }}"
+    become: yes
+    gather_facts: no
 
     tasks:
   
-    - name: Import APT Keys
-      apt_key:
+    - name: Import RPM Keys
+      rpm_key:
         state: present
-        url: "{{ item }}"
+        key: "{{ item }}"
       loop:
+        - https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
         - https://artifacts.elastic.co/GPG-KEY-elasticsearch
-        - https://packages.microsoft.com/keys/microsoft.asc
 
-    - name: Add Elastic Repository
-      apt_repository:
-        repo: deb [arch=amd64] https://artifacts.elastic.co/packages/8.x/apt stable main
-        state: present
-        update_cache: yes
+    - name: Add EPEL Repository
+      yum:
+        name: epel-release
+
+        #- name: Add Elastic Repository
+        #yum_repository:
+        #name: elastic
+        #description: Elasticsearch repository for 7.x packages
+        #enabled: yes
+        #gpgcheck: yes
+        #baseurl: https://artifacts.elastic.co/packages/7.x/yum
+        #gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        #file: elastic
+
+    - name: Add Docker Repository
+      yum_repository:
+        name: docker
+        enabled: yes
+        gpgcheck: yes
+        baseurl: https://download.docker.com/linux/centos
+        gpgkey: https://download.docker.com/linux/centos/gpg
 
     - name: Add Microsoft Repository
-      apt_repository:
-        repo: deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-debian-bullseye-prod bullseye main
-        state: present
-        update_cache: yes
+      yum_repository:
+        name: packages-microsoft-com-prod
+        description: Microsoft Repo for RHEL-based
+        enabled: yes
+        gpgcheck: yes
+        baseurl: https://packages.microsoft.com/rhel/7/prod/
+        gpgkey: https://packages.microsoft.com/keys/microsoft.asc
+        file: prod
 
-    - name: Clean Cache
-      command: apt-get clean
-
-    - name: Refresh apt-cache
-      command: apt-get update
+    - name: Clean Yum Cache
+      command: yum clean all
 
     - name: Install System Tools
-      apt:
+      yum:
         name: "{{ packages }}"
         state: present
       vars:
         packages:
-          - ufw
           - vim
           - nano
           - tmux
+          - cockpit
           - git
-          - golang
-          - dos2unix
           - wget
-          - apt-transport-https
-
-    - name: Prep to start services
-      command: systemctl daemon-reload
+          - golang
+          - bzip2
+          - docker-ce 
+          - docker-ce-cli 
+          - containerd.io 
+          - docker-compose-plugin
 
     - name: Start Firewalld Service
-      command: systemctl start ufw
+      systemd:
+        name: firewalld
+        state: started
+        enabled: yes
 
 ###################################
 # Firewall
 ###################################
 
+    - name: Start Firewalld Service
+      systemd:
+        name: firewalld
+        state: started
+        enabled: yes
+
     - name: Add Elasticsearch Firewall Rule
-      ufw:
-        rule: allow
-        port: '9200'
-        proto: tcp
+      firewalld:
+        zone: public
+        port: 9200/tcp
+        permanent: yes
+        immediate: yes
         state: enabled
         
     - name: Add Kibana Firewall Rule
-      ufw:
-        rule: allow
-        port: '5601'
-        proto: tcp
+      firewalld:
+        zone: public
+        port: 5601/tcp
+        permanent: yes
+        immediate: yes
         state: enabled
-        
-    - name: Add Fleet Server Rule
-      ufw:
-        rule: allow
-        port: '8220'
-        proto: tcp
+
+    - name: Add Fleet Firewall Rule
+      firewalld:
+        zone: public
+        port: 8220/tcp
+        permanent: yes
+        immediate: yes
         state: enabled
 
     - name: Add AtomicGUI Firewall Rule
-      ufw:
-        rule: allow
-        port: '8487'
-        proto: tcp
+      firewalld:
+        zone: public
+        port: 8487/tcp
+        permanent: yes
+        immediate: yes
         state: enabled
 
-    - name: Add SSH Rule for Vagrant
-      ufw:
-         rule: allow
-         port: '22'
-         proto: tcp
-         state: enabled
-
-
-###################################
-# Elasticstack
-###################################
-
-    - name: Install Elasticsearch
-      apt:
-        name: elasticsearch={{ lab.stack_version }}
-        state: present
-
-    - name: Create Default Directory
-      file:
-        path: /etc/default
-        state: directory
-
-    - name: Add Elasticsearch Default File
-      copy:
-        src: ./files/elasticsearch
-        dest: /etc/default/elasticsearch
-        owner: root
-        group: root
-        mode: '0644'
-
-    - name: Create Elasticsearch Service Folder
-      file:
-        path: /etc/systemd/system/elasticsearch.service.d
-        state: directory
-        # owner: vagrant
-        # mode: '0755'
-
-    - name: Add Override Config
-      copy:
-        src: ./files/override.conf
-        dest: /etc/systemd/system/elasticsearch.service.d/override.conf
-        # owner: root
-        # group: root
-        # mode: '0644'
-    
-    - name: Add Limits Config
-      copy:
-        src: ./files/limits.conf
-        dest: /etc/security/limits.conf
-        # owner: root
-        # group: root
-        # mode: '0644'
-
-    - name: Confirm Directory Permissions
-      file:
-        path: /etc/elasticsearch
-        state: directory
-        recurse: true
-        owner: elasticsearch
-        group: elasticsearch
-
-    - name: Update Elasticsearch Config
-      copy:
-        src: ./files/elasticsearch.yml
-        dest: /etc/elasticsearch/elasticsearch.yml
-        owner: elasticsearch
-        group: elasticsearch
-        mode: '0660'
-
-    - name: Copy Patched Elasticsearch Env file
-      copy:
-        src: ./files/elasticsearch-env
-        dest: /usr/share/elasticsearch/bin/elasticsearch-env
-        owner: elasticsearch
-        group: elasticsearch
-        mode: '0660'
-
-
-    - name: Make sure file is UNIX formatted
-      command: dos2unix /usr/share/elasticsearch/bin/elasticsearch-env
-    
-    - name: Start and Enable Elasticsearch
-      systemd: 
-        name: elasticsearch
-        state: started
-        enabled: true
-
-    - name: Reset Elastic password
-      shell: /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic -a -b -s
-      register: es_password
-
-    - name: Reset Kibana_system password
-      shell: /usr/share/elasticsearch/bin/elasticsearch-reset-password -u kibana_system -a -b -s
-      register: kibana_password
-
-
-    - name: Create Vagrant user
-      uri:
-        url: https://localhost:9200/_security/user/vagrant
-        validate_certs: false
-        user: elastic
-        password: "{{ es_password.stdout }}"
-        method: POST
-        body: "{{ lookup('file','create_vagrant_user.json') }}"
-        force_basic_auth: yes
-        body_format: json
-        headers:
-          Content-Type: "application/json"
-
-    #- name: Generate enrollment token for Kibana
-    #  shell: /usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s kibana
-    #  register: kibana_token
-
-    - name: Install Kibana
-      apt:
-        name: kibana={{ lab.stack_version }}
-        state: present
-
-    - name: Update Kibana Config
-      copy:
-        src: ./files/kibana.yml
-        dest: /etc/kibana/kibana.yml
-        owner: kibana
-        group: kibana
-
-    - name: Create Kibana certs directory
-      file:
-        path: /etc/kibana/certs
-        state: directory
-        owner: kibana
-        group: kibana
-      
-
-    - name: Copy Kibana CA cert
-      copy:
-        src: /etc/elasticsearch/certs/http_ca.crt
-        dest: /etc/kibana/certs/
-        owner: kibana
-        group: kibana
-        remote_src: yes
-
-    - name: Add Elasticsearch URL to Kibana config
-      blockinfile:
-        path: /etc/kibana/kibana.yml
-        block: |
-         elasticsearch.hosts: ['https://192.168.56.10:9200']
-         elasticsearch.username: kibana_system
-         elasticsearch.password: {{ kibana_password.stdout }}
-         elasticsearch.ssl.certificateAuthorities: [/etc/kibana/certs/http_ca.crt]
-
-    - name: Confirm Directory Permissions
-      file:
-        path: /etc/kibana
-        state: directory
-        recurse: true
-        owner: kibana
-        group: kibana
-  
-    #- name: Set Enrollment Key
-    #  command: /usr/share/kibana/bin/kibana-setup --enrollment-token "{{ kibana_token.stdout }}"
-
-    - name: Start and Enable Kibana
-      systemd: 
-        name: kibana
-        state: started
-        enabled: true
-
-    - name: Copy Saved Objects
-      copy: 
-        src: ./files/export.ndjson
-        dest: /tmp
-
-    
-    #- name: Test Kibana
-      #uri:
-        #url: http://127.0.0.1:5601/login
-        #method: GET
-        #headers:
-          #Content-Type: application/json
-          #kbn-xsrf: true
-       
-
-    #- name: Upload a file via multipart/form-multipart
-      #uri:
-       # url: http://127.0.0.1:5601/api/saved_objects/_import?overwrite=true
-      #  method: POST
-      #  headers:
-      #    Content-Type: application/ndjson
-      #    kbn-xsrf: true
-       # user: vagrant
-       # password: vagrant
-       # body_format: form-multipart
-       # body:
-       #   filename: /tmp/export.ndjson
-      #    mime_type: application/octet-stream
-      #uri:
-        #url: http://127.0.0.1:5601/api/saved_objects/_import?overwrite=true
-        #method: GET
-        #src: /tmp/export.ndjson
-          #mime_type: application/json
-        #headers:
-          #Content-Type: application/ndjson
-         # kbn-xsrf: true
-        #user: vagrant
-        #password: vagrant
-        #validate_certs: false
-        #remote_src: yes
-
-###################################
-# SIEM Rules
-# This section needs love / currently working 
-# as a small bash script called in Vagrantfile
-###################################
-
-    # - name: Create Detection Engine Index
-    #   uri:
-    #     url: http://192.168.56.10:5601/api/detection_engine/index
-    #     method: POST
-    #     status_code: 200
-    #     user: "{{ vagrant.user }}"
-    #     password: "{{ bootstrap_password }}"
-    #     validate_certs: false
-    #     force_basic_auth: true
-
-    # - name: Put Prepackaged Rules
-    #   uri:
-    #     url: http://192.168.56.10:5601/api/detection_engine/rules/prepackaged
-    #     method: PUT
-    #     body_format: json
-    #     body: >
-    #       {
-    #         "password": "{{ bootstrap_password }}"
-    #       }
-    #     status_code: 200
-    #     user: "{{ vagrant.user }}"
-    #     password: "{{ bootstrap_password }}"
-    #     validate_certs: false
-    #     force_basic_auth: true
+    - name: Add Caldera Firewall Rule
+      firewalld:
+        zone: public
+        port: 8888/tcp
+        permanent: yes
+        immediate: yes
+        state: enabled
 
 
 ###################################
@@ -338,7 +129,7 @@
 ###################################
 
     - name: Install Powershell
-      apt:
+      yum:
         name: powershell
         state: present
 
@@ -381,7 +172,7 @@
       lineinfile:
         path: /etc/ssh/sshd_config
         line: 'Subsystem powershell /usr/bin/pwsh -sshs -NoLogo'
-        create: true
+        create: yes
         owner: root
         group: root
         mode: '0600'
