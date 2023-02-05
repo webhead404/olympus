@@ -65,6 +65,7 @@
           - wget
           - golang
           - bzip2
+          - dos2unix
           - containerd.io
           - docker-ce 
           - docker-ce-cli
@@ -123,10 +124,34 @@
 
 # Elastic Container Project
 
+    - name: Start and Enable Docker
+      systemd: 
+        name: docker
+        state: started
+        enabled: yes
+
     - name: Download ECP
       git:
-    repo: https://github.com/peasead/elastic-container
-    dest: /home/vagrant/
+        repo: https://github.com/peasead/elastic-container
+        dest: /home/vagrant/elastic-container/
+
+    - name: Add environment file
+      copy:
+        src: ./files/.env
+        dest: /home/vagrant/elastic-container/.env
+
+    - name: Confirm Directory Permissions
+      file:
+        path: /home/vagrant/elastic-container
+        state: directory
+        recurse: yes
+        owner: vagrant
+        group: vagrant
+    
+    - name: Run ECP Install
+      command: /home/vagrant/elastic-container/elastic-container.sh stage
+      args:
+        chdir: /home/vagrant/elastic-container/
 
 ###################################
 # Powershell

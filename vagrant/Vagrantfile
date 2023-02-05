@@ -9,6 +9,26 @@ SCRIPT
 
 Vagrant.configure("2") do |config|
 
+  config.vm.define "ts.elastic-ecp", primary: true do |cfg|
+    #cfg.vm.box = "rockylinux/8"
+    cfg.vm.box = "dev-ecp"
+    #cfg.vm.box_version = "1.2.0"
+    cfg.vm.hostname = "elastic"
+    cfg.disksize.size = "256GB"
+    cfg.vm.synced_folder '.', '/vagrant', disabled: true
+    cfg.vm.network "private_network", ip: "192.168.56.10", auto_config: true
+    cfg.vm.network "forwarded_port", guest: 5601, host: 5601
+    cfg.vm.network "forwarded_port", guest: 9200, host: 9200
+    cfg.vm.provider :virtualbox do |vb|
+      vb.name = "ts.elastomic-ecp"
+      vb.memory = 4096
+      vb.cpus = 2
+      vb.customize ["modifyvm", :id, "--cableconnected1", "on"]
+    end
+
+    cfg.vm.provision "start_ecp", type: "shell", inline: "/home/vagrant/elastic-container/elastic-container.sh start"
+  end
+
   config.vm.define "ts.elastic", primary: true do |cfg|
     #cfg.vm.box = "rockylinux/8"
     cfg.vm.box = "bento/rockylinux-8.4"
