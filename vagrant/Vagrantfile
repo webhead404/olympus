@@ -26,7 +26,24 @@ Vagrant.configure("2") do |config|
       vb.customize ["modifyvm", :id, "--cableconnected1", "on"]
     end
 
-    cfg.vm.provision "start_ecp", type: "shell", inline: "/home/vagrant/elastic-container/elastic-container.sh start"
+    #cfg.vm.provision "start_ecp", type: "shell", path: "../vagrant/scripts/start_ecp.sh"
+    cfg.vm.provision "start_ecp", type: "shell", inline: <<-SHELL
+    cd /home/vagrant/elastic-container
+    chmod +x /home/vagrant/elastic-container/elastic-container.sh
+    bash ./elastic-container.sh start
+    SHELL
+
+    # Setup the Elastic Stack
+    cfg.vm.provision "shell" do |s2|
+      s2.path = "../vagrant/scripts/setup-elastic.sh"
+      s2.env = {
+        "ELASTIC_STACK_VERSION" => "8.6.0",
+        "KIBANA_URL" => "https://192.168.56.10:5601",
+        "KIBANA_AUTH" => "elastic:vagrant",
+        "ELASTICSEARCH_URL" => "https://192.168.56.10:9200",
+        "FLEET_SERVER_URL" => "https://192.168.56.10:8220"
+      }
+    end
   end
 
   config.vm.define "ts.elastic", primary: true do |cfg|
