@@ -21,14 +21,16 @@ if [ -n "${KIBANA_AUTH}" ]; then
     HEADERS+=(-u "${KIBANA_AUTH}")
 fi
 
-curl -k --silent -XPOST "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/agent_policies?sys_monitoring=true" -d '{"name":"Default policy","description":"","namespace":"default","monitoring_enabled":["metrics","logs"],"has_fleet_server":false}'
-#curl -k --silent -XPUT "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/fleet_server_hosts/fleet-default-fleet-server-host" -d '{
-  #"name": "Default",
-  #"host_urls": [
-    #"https://192.168.56.10:8220"
- # ],
- # "is_default": true
-#}'
+# Install jq
+function install_jq() {
+    if ! command -v jq >/dev/null; then
+        sudo yum install -y jq
+    fi
+}
+
+function create_empty_default_agent_policy() {
+    curl -k --silent -XPOST "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/agent_policies?sys_monitoring=true" -d '{"name":"Default policy","description":"","namespace":"default","monitoring_enabled":["metrics","logs"],"has_fleet_server":false}'
+}
 
 
 # Collect integrations available deployment
@@ -216,6 +218,8 @@ function configure_index_replicas() {
 
 # Execute Fleet Funcionts
 function main() {
+    install_jq
+    create_empty_default_agent_policy
     #create_fleet_user
     configure_fleet_outputs
     policy_id=$(get_default_policy)
