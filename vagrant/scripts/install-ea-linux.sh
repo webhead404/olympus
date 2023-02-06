@@ -11,7 +11,7 @@ AGENT_URL="https://artifacts.elastic.co/downloads/beats/elastic-agent/elastic-ag
 
 function install_jq() {
     if ! command -v jq; then
-        sudo apt-get install -y jq
+        sudo yum install -y jq
     fi
 }
 function download_and_install_agent() {
@@ -34,7 +34,7 @@ function get_enrollment_token() {
     declare -a AUTH=()
     declare -a HEADERS=(
         "-H" "Content-Type: application/json",
-        "-H" "kbn-xsrf: 8.1.0"
+        "-H" "${STACK_VER}"
     )
 
     if [ -n "${KIBANA_AUTH}" ]; then
