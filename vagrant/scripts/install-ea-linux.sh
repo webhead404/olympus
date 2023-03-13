@@ -11,7 +11,7 @@ AGENT_URL="https://artifacts.elastic.co/downloads/beats/elastic-agent/elastic-ag
 
 function install_jq() {
     if ! command -v jq; then
-        sudo yum install -y jq
+        sudo apt install -y jq
     fi
 }
 function download_and_install_agent() {
@@ -41,10 +41,8 @@ function get_enrollment_token() {
         AUTH=("-u" "${KIBANA_AUTH}")
     fi
 
-    POLICY_ID=$(curl --silent -XGET "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/agent_policies" | jq --raw-output '.items[] | select(.name | startswith("Default policy")) | .id')
-
-    ENROLLMENT_TOKEN=$(curl --silent -XGET "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/enrollment-api-keys" | jq --arg POLICY_ID "$POLICY_ID" -r '.list[] | select(.policy_id==$POLICY_ID) | .api_key')
-
+    POLICY_ID=$(curl --silent --insecure -XGET "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/agent_policies" | jq --raw-output '.items[] | select(.name | startswith("Default policy")) | .id')
+    ENROLLMENT_TOKEN=$(curl --silent --insecure -XGET "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/enrollment-api-keys" | jq --arg POLICY_ID "$POLICY_ID" -r '.list[] | select(.policy_id==$POLICY_ID) | .api_key')
     #response=$(curl --silent "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/enrollment-api-keys")
     #enrollment_key_id=$(echo -n "${response}" | jq -r '.list[] | select(.name | startswith("Default")) | .id' )
     #enrollment_key=$(curl --silent "${AUTH[@]}" "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/enrollment-api-keys/${enrollment_key_id}" | jq -r '.item.api_key')

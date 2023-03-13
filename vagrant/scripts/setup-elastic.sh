@@ -24,7 +24,7 @@ fi
 # Install jq
 function install_jq() {
     if ! command -v jq >/dev/null; then
-        sudo yum install -y jq
+        sudo apt install -y jq
     fi
 }
 
