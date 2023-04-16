@@ -19,7 +19,7 @@ if [ "${DOCKER_FINGERPRINT}" == "${GPG_FINGERPRINT}" ]; then
     rpm --import https://download.docker.com/linux/centos/gpg
 
 else
-    echo "you suck!"
+    echo "GPG key import failed"
 fi
 
 sudo yum -y install docker-ce docker-ce-cli containerd.io docker-compose-plugin

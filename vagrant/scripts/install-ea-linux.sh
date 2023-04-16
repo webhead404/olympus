@@ -11,7 +11,7 @@ AGENT_URL="https://artifacts.elastic.co/downloads/beats/elastic-agent/elastic-ag
 
 function install_jq() {
     if ! command -v jq; then
-        sudo apt install -y jq
+        sudo yum install -y jq
     fi
 }
 function download_and_install_agent() {
@@ -61,7 +61,7 @@ function clear_siem_alerts() {
     fi
 
     echo "Clearing SIEM Alerts if any were generated during provisioning"
-    SIEM_SIGNALS_CLEARED=$(curl --silent -XPOST "${AUTH[@]}" "${HEADERS[@]}" "${ELASTICSEARH_URL}/.siem-signals-default-*/_delete_by_query" -d \
+    SIEM_SIGNALS_CLEARED=$(curl -k --silent -XPOST "${AUTH[@]}" "${HEADERS[@]}" "${ELASTICSEARH_URL}/.siem-signals-default-*/_delete_by_query" -d \
     '{
        "query": {
          "match": {
