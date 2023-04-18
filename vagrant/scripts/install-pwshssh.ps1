@@ -1,10 +1,10 @@
 Set-Item WSMan:\localhost\Shell\MaxMemoryPerShellMB 1024
 
-choco install openssh -y
+#choco install openssh -y
 
-cd "C:\Program Files\OpenSSH-Win64"
+cd "C:\OpenSSH-Win64"
 
-.\install-sshd.ps1
+#.\install-sshd.ps1
 
 .\ssh-keygen.exe -t ecdsa -b 521 -A
 
@@ -15,17 +15,17 @@ cd "C:\Program Files\OpenSSH-Win64"
 #     Set-Acl $_.FullName $acl
 #  }
 
- New-NetFirewallRule -Protocol TCP -LocalPort 22 -Direction Inbound -Action Allow -DisplayName SSH
+ #New-NetFirewallRule -Protocol TCP -LocalPort 22 -Direction Inbound -Action Allow -DisplayName SSH
 
  Set-Service SSHD -StartupType Automatic
  Set-Service SSH-Agent -StartupType Automatic
 
- $content = (Get-Content -Path "C:\Program Files\OpenSSH-Win64\sshd_config_default")
+ $content = (Get-Content -Path "C:\ProgramData\ssh\sshd_config_default")
 
- $content = $content.Replace("#PasswordAuthentication yes","PasswordAuthentication yes").Replace("#PubkeyAuthentication yes","PubkeyAuthentication yes").Replace("Subsystem	sftp	sftp-server.exe","Subsystem powershell c:/progra~1/powershell/7/pwsh.exe -sshs -NoLogo") | Set-Content -Path "C:\Program Files\OpenSSH-Win64\sshd_config_default"
+ $content = $content.Replace("#PasswordAuthentication yes","PasswordAuthentication yes").Replace("#PubkeyAuthentication yes","PubkeyAuthentication yes").Replace("Subsystem	sftp	sftp-server.exe","Subsystem powershell c:/progra~1/powershell/7/pwsh.exe -sshs -NoLogo") | Set-Content -Path "C:\ProgramData\ssh\sshd_config"
  
 Restart-Service sshd
 
-$env:Path += ";C:\Program Files\OpenSSH-Win64\" 
+$env:Path += ";C:\OpenSSH-Win64\" 
 
 choco install powershell-core -y

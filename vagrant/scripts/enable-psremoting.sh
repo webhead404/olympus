@@ -18,9 +18,10 @@ pwsh -Command "Install-WSMan"
 
 # Reconfigure SSH
 
-echo "PasswordAuthentication yes
-      PubkeyAuthentication yes
-      Subsystem powershell /usr/bin/pwsh -sshs -NoLogo" >> /etc/ssh/sshd_config
+echo "
+PasswordAuthentication yes
+PubkeyAuthentication yes
+Subsystem powershell /usr/bin/pwsh -sshs -NoLogo" >> /etc/ssh/sshd_config
 
 # Restart sshd
 systemctl restart sshd
