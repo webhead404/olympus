@@ -1,6 +1,6 @@
 {
   "variables": {
-    "version": "6.1.30"
+    "version": "6.1.42"
   },
   "builders": [
     {
@@ -29,10 +29,10 @@
       "headless": true,
       "http_directory": "http",
       "iso_urls": [
-        "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-11.2.0-amd64-netinst.iso"
+        "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-11.4.0-amd64-netinst.iso"
       ],
-        "iso_checksum": "45c9feabba213bdc6d72e7469de71ea5aeff73faea6bfb109ab5bad37c3b43bd",
-        "ssh_username": "vagrant",
+      "iso_checksum": "d490a35d36030592839f24e468a5b818c919943967012037d6ab3d65d030ef7f",
+      "ssh_username": "vagrant",
         "ssh_password": "vagrant",
         "ssh_port": 22,
         "ssh_wait_timeout": "1800s",
@@ -71,20 +71,19 @@
         "scripts/sudoers.sh",
         "scripts/vagrant.sh",
         "scripts/systemd.sh",
-        "scripts/virtualbox.sh"
+        "scripts/virtualbox.sh",
+        "scripts/selinux.sh"
         ]
       },
       
       {
         "type": "ansible",
         "playbook_file": "ansible/elastic-playbook.yml"
-        
       },
+
       {
         "type": "shell",
-        "scripts": [
-        "scripts/cleanup.sh"
-        ],
+        "scripts": "scripts/cleanup.sh",
         "execute_command": "echo 'packer' | sudo -S sh -c '{{ .Vars }} {{ .Path }}'"
       }
     ],

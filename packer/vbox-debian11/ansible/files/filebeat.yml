@@ -16,7 +16,10 @@ filebeat.inputs:
 
   
 output.elasticsearch:  
-  hosts: ["192.168.56.10:9200"]
+  hosts: ["https://192.168.56.10:9200"]
+  user: "elastic"
+  password: "vagrant"
+  ssl.verification_mode: none
 
 
 setup.kibana:  

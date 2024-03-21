@@ -35,11 +35,12 @@
         packages:
           - ufw
           - vim
+          - gcc
+          - unzip
           - nano
           - tmux
           - git
           - wget
-          - golang
           - firefox-esr
           - gedit
           - terminator
@@ -126,13 +127,27 @@
          port: '3391'
          proto: tcp
          state: enabled
-         
-    - name: Add Operator Reverse Shell Firewall Rule
+
+    - name: Add Operator GRPC Firewall Rule
       ufw:
          rule: allow
-         port: '3007'
+         port: '50051'
          proto: tcp
          state: enabled
+
+    - name: Add Operator API Firewall Rule
+      ufw:
+         rule: allow
+         port: '8888'
+         proto: tcp
+         state: enabled
+         
+    #- name: Add Operator Reverse Shell Firewall Rule
+    #  ufw:
+    #     rule: allow
+    #     port: '3007'
+    #     proto: tcp
+    #     state: enabled
 
 
     - name: Add SSH Rule for Vagrant
@@ -161,6 +176,50 @@
 
     - name: Enable Powershell Remoting
       command: pwsh -Command {Enable-PSRemoting -Force}
+
+
+# Golang
+###################################
+
+    - name: Download Go
+      get_url:
+        url: https://go.dev/dl/go{{ go_version }}.linux-amd64.tar.gz
+        dest: /tmp/go-{{ go_version }}.tar.gz
+        mode: '0755'
+      vars:
+        go_version: "1.19.2"
+
+    - name: Untar Go
+      unarchive:
+        src: /tmp/go-{{ go_version }}.tar.gz
+        dest: /usr/local/
+        remote_src: yes
+      vars:
+        go_version: "1.19.2"
+
+    - name: Touch Vagrant profile file
+      file:
+        path: "/home/vagrant/.profile"
+        state: touch
+        mode: 0755
+        owner: vagrant
+
+    - name: Set Go Root Path in Bashrc
+      command: echo export GOROOT={{ go_root }} >> /etcprofile
+      vars: 
+        go_root: "/usr/local/go"
+
+    - name: Set Go Home in Bashrc
+      command:  echo export GOPATH={{ go_path }} >> /eetc/profile
+      vars:
+        go_path: "/home/vagrant/go"
+
+    - name: Add Go to Path in Bashrc
+      command: echo export PATH={{ go_root }}/bin:"{{ go_root }}"/bin:$PATH >> /etc/profile
+      vars: 
+        go_root: "/usr/local/go"
+        go_path: "/home/vagrant/go"
+
 
 
 ###################################

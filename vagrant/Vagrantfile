@@ -1,11 +1,21 @@
+# Store Operator variables from locally hosted Operator
+#$set_operator_variables = <<SCRIPT
+#tee "/etc/profile.d/operator_vars.sh" > "/dev/null" <<EOF
+# Operator variables
+#export operator_session_key=#{ENV['operator_session_key']}
+#export operator_login_email=#{ENV['operator_login_email']}
+#export operator_login_token=#{ENV['operator_login_token']}
+#EOF
+#SCRIPT
+
 Vagrant.configure("2") do |config|
 
   config.vm.define "ts.elastic", primary: true do |cfg|
-    cfg.vm.box = "webhead404/dev-elastic-7.16.3"
-    #cfg.vm.box_version = "0.9.30"
+    cfg.vm.box = "bento/rockylinux-9"
+    cfg.vm.box_version = "202401.31.0 "
     cfg.vm.hostname = "elastic"
     cfg.disksize.size = "256GB"
-    cfg.vm.synced_folder '.', '/vagrant', disabled: true
+    cfg.vm.synced_folder '.', '/vagrant', disabled: false
     cfg.vm.network "private_network", ip: "192.168.56.10", auto_config: true
     cfg.vm.network "forwarded_port", guest: 5601, host: 5601
     cfg.vm.network "forwarded_port", guest: 9200, host: 9200
@@ -17,49 +27,65 @@ Vagrant.configure("2") do |config|
     end
 
 
-    # Fix Local DNS
-    cfg.vm.provision "set-hosts-file", type: "shell", inline: "printf '\n127.0.0.1  elastic' >> /etc/hosts"
+    # Enable PowerShell
+    cfg.vm.provision "enable-psremoting", type: "shell", path: "../vagrant/scripts/enable-psremoting.sh"
+    # Install Atomic Red Team
+    cfg.vm.provision "install-atomic-redteam", type: "shell", path: "../vagrant/scripts/elastic/install-atomicredteam.ps1"
+    # Download and Start Container Project
+    cfg.vm.provision "download_container-project", type: "shell", path: "../vagrant/scripts/elastic/download-elastic-containers.sh"
 
-
-    # Setup Disk so we have more room to put elastic stack
-    cfg.vm.provision "setdisk", type: "shell", path: "../vagrant/scripts/setup-disk.sh"
-
-    
-    # Setup Fleet server
-    cfg.vm.provision "shell" do |s|
-      s.path = "../vagrant/scripts/install-fleet-server.sh"
-      s.env = {
-          "ELASTIC_STACK_VERSION" => "7.16.3",
-          "KIBANA_URL" => "http://192.168.56.10:5601",
-          "KIBANA_AUTH" => "vagrant:vagrant",
-          "ELASTICSEARCH_URL" => "http://192.168.56.10:9200"
-      }
-    end
 
     # Setup the Elastic Stack
     cfg.vm.provision "shell" do |s2|
-      s2.path = "../vagrant/scripts/setup-elastic.sh"
+      s2.path = "../vagrant/scripts/elastic/setup-elastic.sh"
       s2.env = {
-        "ELASTIC_STACK_VERSION" => "7.16.3",
-        "KIBANA_URL" => "http://192.168.56.10:5601",
-        "KIBANA_AUTH" => "vagrant:vagrant",
-        "ELASTICSEARCH_URL" => "http://192.168.56.10:9200",
+        "ELASTIC_STACK_VERSION" => "8.12.2",
+        "KIBANA_URL" => "https://192.168.56.10:5601",
+        "KIBANA_AUTH" => "elastic:vagrant",
+        "ELASTICSEARCH_URL" => "https://192.168.56.10:9200",
         "FLEET_SERVER_URL" => "https://192.168.56.10:8220"
       }
     end
+
+    # Install Vectr
+    if ENV['VECTR_INSTALL'] == "true"    
+      cfg.vm.network "forwarded_port", guest: 8081, host: 8081
+      cfg.vm.provision "install-vectr", type: "shell", path: "../vagrant/scripts/elastic/install-vectr.sh"
+    end
+
+    # Install Headless Operator
+    if ENV['operator_install'] == "true"
+      cfg.vm.network "forwarded_port", guest: 8888, host: 8889
+      cfg.vm.network "forwarded_port", guest: 50051, host: 50052
+      cfg.vm.provision "shell" do |operator|
+        operator.path = "../vagrant/scripts/elastic/install-headless.sh"
+        operator.env = {
+          "OPERATOR_SESSION_KEY" => ENV['operator_session_key'],
+          "OPERATOR_LOGIN_EMAIL" => ENV['operator_login_email'],
+          "OPERATOR_LOGIN_TOKEN" => ENV['operator_login_token']
+        }
+      end
+    end
+
+    # Install Velociraptor Server
+    if ENV['velociraptor_install'] == "true"
+      cfg.vm.network "forwarded_port", guest: 8889, host: 9000
+      cfg.vm.provision "install-velociraptor-server", type: "shell", path: "../vagrant/scripts/elastic/install-velociraptor-server.sh"
+    end
   end
-
-
+  
 
   config.vm.define "ts.windows10" do |cfg|
-    cfg.vm.box = "webhead404/dev-windows10"
-    #cfg.vm.box_version = "0.9.30"
+    cfg.vm.box = "gusztavvargadr/windows-10"
+    cfg.vm.box_version = "2202.0.2402"
     cfg.vm.hostname = "windows10"
+
     cfg.vm.network "private_network", ip: "192.168.56.11", auto_config: true
 
     config.vm.network "forwarded_port", guest: 3389, host: 33389, auto_correct: true
-    cfg.vm.guest = "windows"
-    cfg.vm.communicator = "winrm"
+    config.vm.network "forwarded_port", guest: 5985, host: 55985, auto_correct: true
+
+
     
     cfg.vm.provider :virtualbox do |vb|
       vb.name = "ts.windows10"
@@ -67,74 +93,125 @@ Vagrant.configure("2") do |config|
       vb.cpus = 2
     end
 
-    cfg.vm.provision "exprfix", type: "shell", path: "../vagrant/scripts/fix-windows-expiration.ps1"
-    cfg.vm.provision "shutup10", type: "shell", path: "../vagrant/scripts/install-shutup10config.ps1"
-    cfg.vm.provision "installea", type: "shell", path: "../vagrant/scripts/install-ea.ps1"
-    cfg.vm.provision "download-install-pneuma-windows", type: "shell", path: "../vagrant/scripts/download-pneuma-windows.ps1"
+    cfg.vm.provision "exprfix", type: "shell", path: "../vagrant/scripts/windows10/fix-windows-expiration.ps1"
+    cfg.vm.provision "install-chocolatey", type: "shell", path: "../vagrant/scripts/install-choco.ps1"
+    cfg.vm.provision "install-pwshssh", type: "shell", path: "../vagrant/scripts/windows10/install-pwshssh.ps1"
+    cfg.vm.provision "join-domain", type: "shell", path: "../vagrant/scripts/join-domain.ps1"
+
+    
+    # Install Pneuma Agent
+    if ENV['operator_install'] == "true" 
+      cfg.vm.provision "download-install-pneuma-windows", type: "shell", path: "../vagrant/scripts/windows10/download-pneuma-windows.ps1"
+    end
+
+    # Install Nextron Aurora Agent
+    if ENV['aurora_install'] == "true"
+      cfg.vm.provision "install-aurora-agent", type: "shell", path: "../vagrant/scripts/windows10/install-aurora.ps1"
+    end
+
+    # Install Hayabusa
+    if ENV['hayabusa_install'] == "true"
+      cfg.vm.provision "install-hayabusa", type: "shell", path: "../vagrant/scripts/windows10/install-hayabusa.ps1"
+    end
+
+    # Install Velociraptor Client
+    if ENV['velociraptor_install'] == "true"
+      cfg.vm.provision "install_velociraptor", type: "shell", path: "../vagrant/scripts/windows10/install-velox-client-windows.ps1"
+    end
+
+    #cfg.vm.provision "shutup10", type: "shell", path: "../vagrant/scripts/install-shutup10config.ps1"
+    cfg.vm.provision "shell" do |s|
+      s.path = "../vagrant/scripts/windows10/install-ea.ps1"
+      s.env = {
+        "ELASTIC_STACK_VERSION" => '8.12.2',
+        "KIBANA_URL" => 'https://192.168.56.10:5601',
+        "KIBANA_AUTH" => 'elastic:vagrant',
+        "ELASTICSEARCH_URL" => 'https://192.168.56.10:9200',
+        "FLEET_SERVER_URL" => 'https://192.168.56.10:8220'
+      }
+    end
   end
 
 
 
-  config.vm.define "ts.debian11" do |cfg|
-    cfg.vm.box = "webhead404/dev-debian11"
-    #cfg.vm.box_version = "0.9.30"
-    cfg.vm.hostname = "debian11"
-    cfg.vm.synced_folder '.', '/vagrant', disabled: true
+  config.vm.define "ts.rocky9" do |cfg|
+    cfg.vm.box = "bento/rockylinux-9"
+    cfg.vm.box_version = "202401.31.0 "
+    cfg.vm.hostname = "rocky9"
+    cfg.vm.synced_folder '.', '/vagrant', disabled: false
     cfg.vm.network "private_network", ip: "192.168.56.12", auto_config: true
     cfg.vm.network "forwarded_port", guest: 80, host: 8080
     cfg.vm.provider :virtualbox do |vb|
-      vb.name = "ts.debian11"
+      vb.name = "ts.rocky9"
       vb.memory = 1024
       vb.cpus = 1
       vb.customize ["modifyvm", :id, "--cableconnected1", "on"]
     end
 
-    # Fix Local DNS
-    cfg.vm.provision "set-hosts-file", type: "shell", inline: "printf '\n127.0.0.1  debian11' >> /etc/hosts"
+    # Enable PowerShell Remoting
 
-    # Setup Pneuma agent and service
-    cfg.vm.provision "download-install-pneuma-linux", type: "shell", path: "../vagrant/scripts/download-pneuma-linux.sh"
+    cfg.vm.provision "enable-psremoting", type: "shell", path: "../vagrant/scripts/enable-psremoting.sh"
 
-    # Setup Auditbeat
-    cfg.vm.provision "filebeatsetup", type: "shell", path: "../vagrant/scripts/setup-linux-beats.sh"
+    # Install SigmaCLI and Rules
+    if ENV['sigma_install'] == "true"
+      cfg.vm.provision "install_sigma", type: "shell", path: "../vagrant/scripts/rocky9/install-sigma.sh"
+    end
+    
+    # Install Prelude Operator
+    if ENV['operator_install'] == "true" 
+      cfg.vm.provision "download-install-pneuma-linux", type: "shell", path: "../vagrant/scripts/rocky9/download-pneuma-linux.sh"
+    end
+
+    # Install Velociraptor Client
+    if ENV['velociraptor_install'] == "true"
+      cfg.vm.provision "install_velociraptor", type: "shell", path: "../vagrant/scripts/rocky9/install-velox-client-linux.sh"
+    end
+
 
     # Install and Enroll Elastic Agent
     cfg.vm.provision "shell" do |s|
-      s.path = "../vagrant/scripts/install-ea-linux.sh"
+      s.path = "../vagrant/scripts/rocky9/install-ea-linux.sh"
       s.env = {
-        "ELASTIC_STACK_VERSION" => "7.16.3",
-        "KIBANA_URL" => "http://192.168.56.10:5601",
-        "KIBANA_AUTH" => "vagrant:vagrant",
-        "ELASTICSEARCH_URL" => "http://192.168.56.10:9200",
+        "ELASTIC_STACK_VERSION" => "8.12.2",
+        "KIBANA_URL" => "https://192.168.56.10:5601",
+        "KIBANA_AUTH" => "elastic:vagrant",
+        "ELASTICSEARCH_URL" => "https://192.168.56.10:9200",
         "FLEET_SERVER_URL" => "https://192.168.56.10:8220"
       }
     end
-
-    # Setup Disk so we have more room
-    #cfg.vm.provision "setdisk", type: "shell", path: "../vagrant/scripts/setup-disk.sh"
-
   end
 
-
-
   config.vm.define "ts.redops" do |cfg|
-    cfg.vm.box = "webhead404/dev-redops"
-    #cfg.vm.box_version = "0.9.30"
-    cfg.vm.hostname = "redops"
-    cfg.vm.synced_folder ".", "/vagrant", type: "rsync"
+    cfg.vm.box = "kalilinux/rolling"
+    cfg.vm.box_version = "2024.1.0"
+    cfg.vm.hostname = "kali"
+    cfg.vm.synced_folder '.', '/vagrant', disabled: true
     cfg.vm.network "private_network", ip: "192.168.56.13", auto_config: true
-    cfg.vm.network "forwarded_port", guest: 3389, host: 43389
     cfg.vm.provider :virtualbox do |vb|
       vb.name = "ts.redops"
+      vb.memory = 1024
+      vb.cpus = 1
+      vb.customize ["modifyvm", :id, "--cableconnected1", "on"]
+      end
+  end
+
+  config.vm.define "ts.dc" do |cfg|
+    cfg.vm.box = "gusztavvargadr/windows-server-2019-standard-core"
+    cfg.vm.box_version = "1809.0.2402"
+    cfg.vm.hostname = "dc"
+    cfg.winrm.transport = :plaintext
+    cfg.winrm.basic_auth_only = true
+    cfg.vm.network "private_network", ip: "192.168.56.14", gateway: "192.168.56.1", dns: "8.8.8.8"
+    cfg.vm.provider :virtualbox do |vb|
+      vb.name = "ts.dc"
       vb.memory = 2048
       vb.cpus = 2
       vb.customize ["modifyvm", :id, "--cableconnected1", "on"]
     end
-
-    # Fix Local DNS
-    cfg.vm.provision "set-hosts-file", type: "shell", inline: "printf '\n127.0.0.1  redops`' >> /etc/hosts"
-
-    # Install Operator
-    cfg.vm.provision "install-operator", type: "shell", path: "../vagrant/scripts/install-operator.sh"
+    cfg.vm.provision "create-domain", type: "shell", path: "../vagrant/scripts/dc/create-domain.ps1", args: "192.168.56.14"
+    #cfg.vm.provision "reload"
+    #cfg.vm.provision "join-domain", type: "shell", path: "../vagrant/scripts/join-domain.ps1"
+    cfg.vm.provision "install-chocolatey", type: "shell", path: "../vagrant/scripts/install-choco.ps1"
+    cfg.vm.provision "install-badblood", type: "shell", path: "../vagrant/scripts/dc/install-badblood.ps1"
   end
 end
