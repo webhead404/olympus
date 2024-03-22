@@ -198,7 +198,7 @@ function configure_index_replicas() {
 }
 
 function configure_osquery() {
-    curl -k --silent "${HEADERS[@]}" -XPOST "${KIBANA_URL}/internal/osquery/assets/update"
+    curl -k --silent "${HEADERS[@]}" -H "Elastic-Api-Version: 1" -XPOST "${KIBANA_URL}/internal/osquery/assets/update"
 }
 
 # Add Detection Engine Index"
@@ -225,6 +225,7 @@ function main() {
     configure_fleet_outputs
     policy_id=$(get_default_policy)
     configure_index_replicas
+    configure_osquery
     #add_detection_engine_index
     #add_detection_engine_rules
     #enable_detection_rules

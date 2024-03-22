@@ -50,29 +50,5 @@ function get_enrollment_token() {
     echo -n "${ENROLLMENT_TOKEN}"
 }
 
-function clear_siem_alerts() {
-    declare -a AUTH=()
-    declare -a HEADERS=(
-        "-H" "Content-Type: application/json"
-    )
-
-    if [ -n "${KIBANA_AUTH}" ]; then
-        AUTH=("-u" "${KIBANA_AUTH}")
-    fi
-
-    echo "Clearing SIEM Alerts if any were generated during provisioning"
-    SIEM_SIGNALS_CLEARED=$(curl -k --silent -XPOST "${AUTH[@]}" "${HEADERS[@]}" "${ELASTICSEARH_URL}/.siem-signals-default-*/_delete_by_query" -d \
-    '{
-       "query": {
-         "match": {
-           "signal.status": "open"
-         }
-       }
-     }'
-   )
-    #echo -n "${SIEM_SIGNALS_CLEARED}"
-}
-
 install_jq
 download_and_install_agent
-clear_siem_alerts

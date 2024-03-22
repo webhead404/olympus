@@ -27,7 +27,7 @@ esac
 ELASTIC="ts.elastic"
 WINDOWS="ts.windows10"
 ROCKY="ts.rocky9"
-#REDOPS="ts.redops"
+REDOPS="ts.redops"
 DC="ts.dc"
 
 # other vars
@@ -485,12 +485,12 @@ deploy_custom() {
         echo -e "${LIGHTPURPLE}     (B)ack to Main                           ${NC}";
         echo -e "${LIGHTPURPLE} ---------------------------------------------${NC}";
         echo ""
-        echo "The Elastic and Redops boxes are required."
+        echo "The Elastic box is required."
         echo "What TARGET boxes would you like to deploy?"
         echo ""
         read -rp "Deploy the Windows10 target? [Y/N]: " yn
         case $yn in
-            [Yy]* ) WINDOWS="ts.windows10"; break;;
+            [Yy]* ) export WINDOWS="ts.windows10"; break;;
             [Nn]* ) WINDOWS=""; break;;
             * ) echo -e "\n${RED} Selection invalid, try again:${NC} "; sleep 2;;
         esac
@@ -507,8 +507,42 @@ deploy_custom() {
         echo ""
         read -rp "Deploy the Rocky9 target? [Y/N]: " yn
         case $yn in
-            [Yy]* ) ROCKY="ts.rocky9"; break;;
+            [Yy]* ) export ROCKY="ts.rocky9"; break;;
             [Nn]* ) ROCKY=""; break;;
+            * ) echo -e "\n${RED} Selection invalid, try again:${NC} "; sleep 2;;
+        esac
+    done
+    while true; do
+        clear
+        echo -e "${LIGHTPURPLE}      __________  ___           __            ${NC}";
+        echo -e "${LIGHTPURPLE}     /_  __/ __/ / _ \___ ___  / /__  __ __   ${NC}";
+        echo -e "${LIGHTPURPLE}      / / _\ \  / // / -_) _ \/ / _ \/ // /   ${NC}";
+        echo -e "${LIGHTPURPLE}     /_/ /___/ /____/\__/ .__/_/\___/\_, /    ${NC}";
+        echo -e "${LIGHTPURPLE}                       /_/          /___/     ${NC}";
+        echo -e "${LIGHTPURPLE}     (B)ack to Main                           ${NC}";
+        echo -e "${LIGHTPURPLE} ---------------------------------------------${NC}";
+        echo ""
+        read -rp "Deploy the Redops target? [Y/N]: " yn
+        case $yn in
+            [Yy]* ) export REDOPS="ts.redops"; break;;
+            [Nn]* ) REDOPS=""; break;;
+            * ) echo -e "\n${RED} Selection invalid, try again:${NC} "; sleep 2;;
+        esac
+    done
+    while true; do
+        clear
+        echo -e "${LIGHTPURPLE}      __________  ___           __            ${NC}";
+        echo -e "${LIGHTPURPLE}     /_  __/ __/ / _ \___ ___  / /__  __ __   ${NC}";
+        echo -e "${LIGHTPURPLE}      / / _\ \  / // / -_) _ \/ / _ \/ // /   ${NC}";
+        echo -e "${LIGHTPURPLE}     /_/ /___/ /____/\__/ .__/_/\___/\_, /    ${NC}";
+        echo -e "${LIGHTPURPLE}                       /_/          /___/     ${NC}";
+        echo -e "${LIGHTPURPLE}     (B)ack to Main                           ${NC}";
+        echo -e "${LIGHTPURPLE} ---------------------------------------------${NC}";
+        echo ""
+        read -rp "Deploy the DC target? [Y/N]: " yn
+        case $yn in
+            [Yy]* ) export DC="ts.dc"; break;;
+            [Nn]* ) DC=""; break;;
             * ) echo -e "\n${RED} Selection invalid, try again:${NC} "; sleep 2;;
         esac
     done
@@ -525,16 +559,17 @@ deploy_custom() {
         echo ""
         echo " You have chosen the following Custom Deployment:"
         echo ""
-        echo " - STACK..: "${ELASTIC}" (required)"
-        echo " - CONTROL...: "${REDOPS}" (required)"
+        echo " - STACK + CONTROL..: "${ELASTIC}" (required)"
         echo " - target...: "${WINDOWS}""
         echo " - target...: "${ROCKY}""
+        echo " - target...: "${REDOPS}""
+        echo " - target...: "${DC}""
         echo ""
         read -rp "Confirm to proceed with deployment [Y/N]: " yn
         case $yn in
             [Yy]* )
-                echo "You have chosen the "${ELASTIC}" "${REDOPS}" "${WINDOWS}" "${ROCKY}""
-                vagrant up ${ELASTIC} ${REDOPS} ${WINDOWS} ${ROCKY};
+                echo "You have chosen "${ELASTIC}" "${DC}" "${WINDOWS}" "${ROCKY}" "${REDOPS}""
+                vagrant up ${ELASTIC} ${DC} ${WINDOWS} ${ROCKY} ${REDOPS};
                 sleep 10;
                 snapshot;
                 break;;
