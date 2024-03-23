@@ -1,13 +1,3 @@
-# Store Operator variables from locally hosted Operator
-#$set_operator_variables = <<SCRIPT
-#tee "/etc/profile.d/operator_vars.sh" > "/dev/null" <<EOF
-# Operator variables
-#export operator_session_key=#{ENV['operator_session_key']}
-#export operator_login_email=#{ENV['operator_login_email']}
-#export operator_login_token=#{ENV['operator_login_token']}
-#EOF
-#SCRIPT
-
 Vagrant.configure("2") do |config|
 
   config.vm.define "ts.elastic", primary: true do |cfg|
@@ -19,6 +9,8 @@ Vagrant.configure("2") do |config|
     cfg.vm.network "private_network", ip: "192.168.56.10", auto_config: true
     cfg.vm.network "forwarded_port", guest: 5601, host: 5601
     cfg.vm.network "forwarded_port", guest: 9200, host: 9200
+    cfg.vm.network "forwarded_port", guest: 8888, host: 8888
+
     cfg.vm.provider :virtualbox do |vb|
       vb.name = "ts.elastomic"
       vb.memory = 4096
@@ -26,11 +18,15 @@ Vagrant.configure("2") do |config|
       vb.customize ["modifyvm", :id, "--cableconnected1", "on"]
     end
 
-
     # Enable PowerShell
     cfg.vm.provision "enable-psremoting", type: "shell", path: "../vagrant/scripts/enable-psremoting.sh"
+
     # Install Atomic Red Team
     cfg.vm.provision "install-atomic-redteam", type: "shell", path: "../vagrant/scripts/elastic/install-atomicredteam.ps1"
+
+    # Caldera
+    cfg.vm.provision "install-caldera", type: "shell", path: "../vagrant/scripts/install-caldera.sh"
+
     # Download and Start Container Project
     cfg.vm.provision "download_container-project", type: "shell", path: "../vagrant/scripts/elastic/download-elastic-containers.sh"
 
@@ -79,10 +75,7 @@ Vagrant.configure("2") do |config|
     cfg.vm.box = "gusztavvargadr/windows-10"
     cfg.vm.box_version = "2202.0.2402"
     cfg.vm.hostname = "windows10"
-    #cfg.winrm.transport = :plaintext
-    #cfg.winrm.basic_auth_only = true
     cfg.vm.network "private_network", ip: "192.168.56.11", gateway: "192.168.56.1", dns: "192.168.56.14"
-
     config.vm.network "forwarded_port", guest: 3389, host: 33389, auto_correct: true
     config.vm.network "forwarded_port", guest: 5985, host: 55985, auto_correct: true
 
@@ -96,6 +89,8 @@ Vagrant.configure("2") do |config|
     cfg.vm.provision "exprfix", type: "shell", path: "../vagrant/scripts/windows10/fix-windows-expiration.ps1"
     cfg.vm.provision "install-chocolatey", type: "shell", path: "../vagrant/scripts/install-choco.ps1"
     cfg.vm.provision "install-pwshssh", type: "shell", path: "../vagrant/scripts/windows10/install-pwshssh.ps1"
+    cfg.vm.provision "install-sysmon", type: "shell", path: "../vagrant/scripts/windows10/install-sysmon.ps1"
+    cfg.vm.provision "install-advaudit", type: "shell", path: "../vagrant/scripts/windows10/install-advaudit.ps1"
 
     if ENV['DC'] == "ts.dc"
       cfg.vm.provision "join-domain", type: "shell", path: "../vagrant/scripts/join-domain.ps1"
@@ -144,6 +139,7 @@ Vagrant.configure("2") do |config|
     cfg.vm.synced_folder '.', '/vagrant', disabled: false
     cfg.vm.network "private_network", ip: "192.168.56.12", auto_config: true
     cfg.vm.network "forwarded_port", guest: 80, host: 8080
+    cfg.vm.network "forwarded_port", guest: 9090, host: 9090
     cfg.vm.provider :virtualbox do |vb|
       vb.name = "ts.rocky9"
       vb.memory = 1024
@@ -152,8 +148,11 @@ Vagrant.configure("2") do |config|
     end
 
     # Enable PowerShell Remoting
-
     cfg.vm.provision "enable-psremoting", type: "shell", path: "../vagrant/scripts/enable-psremoting.sh"
+
+    # Setup Samba/Nginx
+    cfg.vm.provision "setup-services", type: "shell", path: "../vagrant/scripts/rocky9/setup-client-services.sh"
+
 
     # Install SigmaCLI and Rules
     if ENV['sigma_install'] == "true"
@@ -211,10 +210,20 @@ Vagrant.configure("2") do |config|
       vb.cpus = 2
       vb.customize ["modifyvm", :id, "--cableconnected1", "on"]
     end
+
+    # Create Thremulator Domain
     cfg.vm.provision "create-domain", type: "shell", path: "../vagrant/scripts/dc/create-domain.ps1", args: "192.168.56.14"
+    
+    # Restart DC
     cfg.vm.provision "reload"
+
+    # Configure OU
     cfg.vm.provision "configure-ou", type: "shell", path: "../vagrant/scripts/dc/configure-ou.ps1"
+    
+    # Install Chocolatey
     cfg.vm.provision "install-chocolatey", type: "shell", path: "../vagrant/scripts/install-choco.ps1"
+    
+    # Install Badblood
     cfg.vm.provision "install-badblood", type: "shell", path: "../vagrant/scripts/dc/install-badblood.ps1"
 
     # Install Velociraptor Client
@@ -233,6 +242,5 @@ Vagrant.configure("2") do |config|
         "FLEET_SERVER_URL" => 'https://192.168.56.10:8220'
       }
     end
-
   end
 end
