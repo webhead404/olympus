@@ -3,7 +3,7 @@ $HayabusaURL = "https://github.com/Yamato-Security/hayabusa/releases/download/v2
 
 New-Item -Path $install_dir -Type directory | Out-Null
 
-# Download Aurora
+# Download Hayabusa
 Write-Output "Installing Hayabusa"
 $ProgressPreference = 'silentlyContinue'
 Invoke-WebRequest -UseBasicParsing -Uri $HayabusaUrl -OutFile "$install_dir\hayabusa-2.13.0-win-x64.zip"
