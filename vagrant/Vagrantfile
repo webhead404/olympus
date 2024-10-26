@@ -22,7 +22,7 @@ Vagrant.configure("2") do |config|
 
 
     # Setup Disk so we have more room to put elastic stack
-    cfg.vm.provision "setdisk", type: "shell", path: "../vagrant/scripts/setup-disk.sh"
+    #cfg.vm.provision "setdisk", type: "shell", path: "../vagrant/scripts/setup-disk.sh"
 
     
     # Setup Fleet server
@@ -135,6 +135,6 @@ Vagrant.configure("2") do |config|
     cfg.vm.provision "set-hosts-file", type: "shell", inline: "printf '\n127.0.0.1  redops`' >> /etc/hosts"
 
     # Install Operator
-    cfg.vm.provision "install-operator", type: "shell", path: "../vagrant/scripts/install-operator.sh"
+    #cfg.vm.provision "install-operator", type: "shell", path: "../vagrant/scripts/install-operator.sh"
   end
 end
