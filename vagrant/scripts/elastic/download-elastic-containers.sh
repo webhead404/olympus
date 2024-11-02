@@ -28,11 +28,11 @@ sudo yum -y install docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
 #echo $ECP_INFO | sed 's/ \([A-Z_]*=[^ ]*\)/\n\1/g; s/\([^ ]\)\( \)/\1\n/g'  > .env
 #sed -i 's/=\([^ ]*\)/=\1\n/g' /home/vagrant/elastic-container/.env
-cp /home/vagrant/.env /home/vagrant/elastic-container/
-dos2unix  /home/vagrant/elastic-container/.env
+#cp /home/vagrant/.env /home/vagrant/elastic-container/
+#dos2unix  /home/vagrant/elastic-container/.env
 
-cd /home/vagrant/elastic-container
-chmod +x elastic-container.sh
+#cd /home/vagrant/elastic-container
+#chmod +x elastic-container.sh
 systemctl start docker
 
 #bash /home/vagrant/elastic-container/elastic-container.sh start

@@ -5,48 +5,37 @@
 
     tasks:
   
-    - name: Import GPG Keys
-      apt_key:
+    - name: Import RPM Keys
+      rpm_key:
         state: present
-        url: "{{ item }}"
+        key: "{{ item }}"
       loop:
-        - https://download.docker.com/linux/debian/gpg
-        - https://packages.microsoft.com/keys/microsoft.asc
+        - https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
 
-    #- name: Add EPEL Repository
-    #  yum:
-    #    name: epel-release
+    - name: Add EPEL Repository
+      yum:
+        name: epel-release
 
-        #- name: Add Elastic Repository
-        #yum_repository:
-        #name: elastic
-        #description: Elasticsearch repository for 7.x packages
-        #enabled: yes
-        #gpgcheck: yes
-        #baseurl: https://artifacts.elastic.co/packages/7.x/yum
-        #gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
-        #file: elastic
-
-    - name: Add Docker Repository
-      apt_repository:
-        repo: deb [arch=amd64] https://download.docker.com/linux/debian bullseye stable
-        state: present
-        update_cache: yes
+    - name: Add Docker-CE stable repo
+      yum_repository:
+        name: docker-ce-stable
+        description: Docker CE Stable Repo
+        baseurl: https://download.docker.com/linux/centos/8/$basearch/stable
+        gpgkey: https://download.docker.com/linux/centos/gpg
+        gpgcheck: yes
 
     - name: Add Microsoft Repository
-      apt_repository:
-        repo: deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-debian-bullseye-prod bullseye main
-        state: present
-        update_cache: yes
+      yum_repository:
+        name: packages-microsoft-com-prod
+        description: Microsoft Repo for RHEL-based
+        enabled: yes
+        gpgcheck: yes
+        baseurl: https://packages.microsoft.com/rhel/7/prod/
+        gpgkey: https://packages.microsoft.com/keys/microsoft.asc
+        file: prod
 
-    - name: Clean Cache
-      command: apt-get clean
-
-    - name: Refresh apt-cache
-      command: apt-get update
-
-    #- name: Clean Yum Cache
-    #  command: yum clean all
+    - name: Clean Yum Cache
+      command: yum clean all
 
     - name: Install System Tools
       apt:
@@ -102,23 +91,25 @@
         proto: tcp
         state: enabled
 
-    #- name: Add AtomicGUI Firewall Rule
-    #  firewalld:
-    #    zone: public
-    #    port: 8487/tcp
-    #    permanent: yes
-    #    immediate: yes
-    #    state: enabled
+    - name: Add AtomicGUI Firewall Rule
+      firewalld:
+        zone: public
+        port: 8487/tcp
+        permanent: yes
+        immediate: yes
+        state: enabled
 
-    #- name: Add Caldera Firewall Rule
-    #  firewalld:
-    #    zone: public
-    #    port: 8888/tcp
-    #    permanent: yes
-    #    immediate: yes
-    #    state: enabled
+    - name: Add Caldera Firewall Rule
+      firewalld:
+        zone: public
+        port: 8888/tcp
+        permanent: yes
+        immediate: yes
+        state: enabled
 
+###################################
 # Elastic Container Project
+###################################
 
     - name: Start and Enable Docker
       systemd: 
@@ -154,7 +145,7 @@
 ###################################
 
     - name: Install Powershell
-      apt:
+      yum:
         name: powershell
         state: present
 
@@ -165,13 +156,6 @@
 ###################################
 # SSH Configuration
 ###################################
-
-    - name: Add SSH Rule for Vagrant
-      ufw:
-         rule: allow
-         port: '22'
-         proto: tcp
-         state: enabled
 
     - name: Uncomment Pass Auth Yes
       lineinfile:
