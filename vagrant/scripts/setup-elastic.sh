@@ -21,6 +21,7 @@ if [ -n "${KIBANA_AUTH}" ]; then
     HEADERS+=(-u "${KIBANA_AUTH}")
 fi
 
+sleep 10
 
 # Collect integrations available deployment
 function list_packages() {

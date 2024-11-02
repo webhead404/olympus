@@ -3,7 +3,7 @@
 set -o pipefail
 
 # Define variables
-STACK_VER="${ELASTIC_STACK_VERSION:-8.12.2}"
+STACK_VER="${ELASTIC_STACK_VERSION:-8.13.0}"
 KIBANA_URL="${KIBANA_URL:-https://192.168.56.10:5601}"
 ELASTICSEARCH_URL="${ELASTICSEARCH_URL:-https://192.168.56.10:9200}"
 KIBANA_AUTH="elastic:vagrant"
@@ -154,6 +154,7 @@ function get_package_policy() {
 
 # Create Fleet User
 function create_fleet_user() {
+    sleep 30
     printf '{"forceRecreate": "true"}' | curl -k --silent -XPOST "${HEADERS[@]}" "${KIBANA_URL}/api/fleet/agents/setup" -d @- | jq
     attempt_counter=0
     max_attempts=5

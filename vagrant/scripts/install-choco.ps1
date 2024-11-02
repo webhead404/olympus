@@ -20,3 +20,5 @@ else{
 
   #choco install mingw -y 
 
+  choco install putty -y
+
