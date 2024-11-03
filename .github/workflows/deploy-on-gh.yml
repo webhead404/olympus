@@ -35,12 +35,14 @@ jobs:
       - name: 
         run: |
           ls -la
-      - name: Upload build artifact
-        uses: actions/upload-artifact@main
-        with:
-          name: "elastic-virtualbox-x86_64"
-          path: |
-            builds/*.box
-            builds/*.json
-          retention-days: 10
-          compression-level: 0 # no compression
+          cd packer/vbox-elastic
+          packer build elastic.json
+      #- name: Upload build artifact
+      #  uses: actions/upload-artifact@main
+      #  with:
+      #    name: "elastic-virtualbox-x86_64"
+      #    path: |
+      #      builds/*.box
+      #      builds/*.json
+      #    retention-days: 10
+      #    compression-level: 0 # no compression
