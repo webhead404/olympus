@@ -36,6 +36,7 @@ jobs:
         run: |
           ls -la
           cd packer/vbox-elastic
+          packer init elastic.json
           packer build elastic.json
       #- name: Upload build artifact
       #  uses: actions/upload-artifact@main
