@@ -11,18 +11,32 @@
         key: "{{ item }}"
       loop:
         - https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
+        #- https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        - https://download.docker.com/linux/centos/gpg
 
     - name: Add EPEL Repository
       yum:
         name: epel-release
 
-    - name: Add Docker-CE stable repo
+        #- name: Add Elastic Repository
+        #yum_repository:
+        #name: elastic
+        #description: Elasticsearch repository for 7.x packages
+        #enabled: yes
+        #gpgcheck: yes
+        #baseurl: https://artifacts.elastic.co/packages/7.x/yum
+        #gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        #file: elastic
+
+    - name: Add Docker Repository
       yum_repository:
-        name: docker-ce-stable
-        description: Docker CE Stable Repo
-        baseurl: https://download.docker.com/linux/centos/8/$basearch/stable
-        gpgkey: https://download.docker.com/linux/centos/gpg
+        name: docker-ce
+        description: Docker repository for docker-ce
+        enabled: yes
+        module_hotfixes: true
         gpgcheck: yes
+        baseurl: https://download.docker.com/linux/centos/7/x86_64/stable
+        gpgkey: https://download.docker.com/linux/centos/gpg
 
     - name: Add Microsoft Repository
       yum_repository:
@@ -38,7 +52,7 @@
       command: yum clean all
 
     - name: Install System Tools
-      apt:
+      yum:
         name: "{{ packages }}"
         state: present
       vars:
@@ -46,11 +60,9 @@
           - vim
           - nano
           - tmux
-          - ufw
           - cockpit
           - git
           - wget
-          - jq
           - golang
           - bzip2
           - dos2unix
@@ -66,29 +78,32 @@
 
     - name: Start Firewalld Service
       systemd:
-        name: ufw
+        name: firewalld
         state: started
         enabled: yes
 
     - name: Add Elasticsearch Firewall Rule
-      ufw:
-        rule: allow
-        port: 9200
-        proto: tcp
+      firewalld:
+        zone: public
+        port: 9200/tcp
+        permanent: yes
+        immediate: yes
         state: enabled
         
     - name: Add Kibana Firewall Rule
-      ufw:
-        rule: allow
-        port: 5601
-        proto: tcp
+      firewalld:
+        zone: public
+        port: 5601/tcp
+        permanent: yes
+        immediate: yes
         state: enabled
 
     - name: Add Fleet Firewall Rule
-      ufw:
-        rule: allow
-        port: 8220
-        proto: tcp
+      firewalld:
+        zone: public
+        port: 8220/tcp
+        permanent: yes
+        immediate: yes
         state: enabled
 
     - name: Add AtomicGUI Firewall Rule
@@ -107,9 +122,7 @@
         immediate: yes
         state: enabled
 
-###################################
 # Elastic Container Project
-###################################
 
     - name: Start and Enable Docker
       systemd: 
@@ -124,8 +137,9 @@
 
     - name: Add environment file
       copy:
-        src: ./files/.env
+        src: ../../vagrant/.env
         dest: /home/vagrant/elastic-container/.env
+      remote_src: true  
 
     - name: Confirm Directory Permissions
       file:

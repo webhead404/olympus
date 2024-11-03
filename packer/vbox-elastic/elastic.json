@@ -6,33 +6,19 @@
     {
       "type": "virtualbox-iso",
       "boot_command": [
-        "<esc><wait>",
-        "install <wait>",
-        "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg <wait>",
-        "debian-installer=en_US.UTF-8 <wait>",
-        "auto <wait>",
-        "locale=en_US.UTF-8 <wait>",
-        "kbd-chooser/method=us <wait>",
-        "keyboard-configuration/xkb-keymap=us <wait>",
-        "netcfg/get_hostname={{ .Name }} <wait>",
-        "netcfg/get_domain=thremulator.io <wait>",
-        "fb=false <wait>",
-        "debconf/frontend=noninteractive <wait>",
-        "console-setup/ask_detect=false <wait>",
-        "console-keymaps-at/keymap=us <wait>",
-        "grub-installer/bootdev=/dev/sda <wait>",
-        "<enter><wait>"
+        "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks.cfg<enter><wait>"
       ],
       "boot_wait": "10s",
       "disk_size": 81920,
-      "guest_os_type": "Debian_64",
+      "guest_os_type": "RedHat_64",
       "headless": true,
       "http_directory": "http",
       "iso_urls": [
-        "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-11.4.0-amd64-netinst.iso"
+        "Rocky-8.10-x86_64-minimal.iso",
+        "https://download.rockylinux.org/pub/rocky/8/isos/x86_64/Rocky-8.10-x86_64-minimal.iso"
       ],
-      "iso_checksum": "d490a35d36030592839f24e468a5b818c919943967012037d6ab3d65d030ef7f",
-      "ssh_username": "vagrant",
+        "iso_checksum": "file:https://download.rockylinux.org/pub/rocky/8/isos/x86_64/CHECKSUM",
+        "ssh_username": "vagrant",
         "ssh_password": "vagrant",
         "ssh_port": 22,
         "ssh_wait_timeout": "1800s",
@@ -57,25 +43,6 @@
       }
     ],
     "provisioners": [
-      { 
-        "environment_vars": [
-        "HOME_DIR=/home/vagrant"
-        ],
-        "type": "shell",
-        "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E sh -eux '{{.Path}}'",
-        "expect_disconnect": true,
-        "scripts": [
-        "scripts/update.sh",
-        "scripts/sshd.sh",
-        "scripts/networking.sh",
-        "scripts/sudoers.sh",
-        "scripts/vagrant.sh",
-        "scripts/systemd.sh",
-        "scripts/virtualbox.sh",
-        "scripts/selinux.sh"
-        ]
-      },
-      
       {
         "type": "ansible",
         "playbook_file": "ansible/elastic-playbook.yml"

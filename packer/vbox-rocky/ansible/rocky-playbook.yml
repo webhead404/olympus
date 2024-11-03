@@ -20,10 +20,10 @@
     - name: Add Elastic Repository
       yum_repository:
         name: elastic
-        description: Elasticsearch repository for 7.x packages
+        description: Elasticsearch repository for 8.x packages
         enabled: yes
         gpgcheck: yes
-        baseurl: https://artifacts.elastic.co/packages/7.x/yum
+        baseurl: https://artifacts.elastic.co/packages/8.x/yum
         gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
         file: elastic
 
