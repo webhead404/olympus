@@ -31,3 +31,16 @@ jobs:
         uses: hashicorp/setup-packer@main
         with:
           version: latest
+
+      - name: 
+        run: |
+          ls -la
+      - name: Upload build artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: "elastic-virtualbox-x86_64"
+          path: |
+            builds/*.box
+            builds/*.json
+          retention-days: 10
+          compression-level: 0 # no compression
