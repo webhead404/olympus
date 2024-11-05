@@ -26,7 +26,7 @@ esac
 
 ELASTIC="ts.elastic"
 WINDOWS="ts.windows10"
-ROCKY="ts.rocky9"
+ROCKY="ts.rocky8"
 REDOPS="ts.redops"
 DC="ts.dc"
 
@@ -507,7 +507,7 @@ deploy_custom() {
         echo ""
         read -rp "Deploy the Rocky9 target? [Y/N]: " yn
         case $yn in
-            [Yy]* ) export ROCKY="ts.rocky9"; break;;
+            [Yy]* ) export ROCKY="ts.rocky8"; break;;
             [Nn]* ) ROCKY=""; break;;
             * ) echo -e "\n${RED} Selection invalid, try again:${NC} "; sleep 2;;
         esac
@@ -617,7 +617,7 @@ deploy_staged() {
         echo ""
         read -rp "  Pre-stage the Rocky9 target? [Y/N]: " yn
         case $yn in
-            [Yy]* ) ROCKY="ts.rocky9"; break;;
+            [Yy]* ) ROCKY="ts.rocky8"; break;;
             [Nn]* ) ROCKY=""; break;;
             [Bb]* ) clear; deploy; break;;
             * ) echo -e "\n${RED} Selection invalid, try again:${NC} "; sleep 2;;
@@ -669,7 +669,7 @@ deploy_staged() {
                 echo -e "  ${LIGHTBLUE}-----------------------------------${NC}";
                 echo ""
                 sleep 3
-                for machine in elastic windows10 rocky9
+                for machine in elastic windows10 rocky8
                 do
                     vagrant box add -cf "thremulation-station/${machine}";
                 done
@@ -1093,7 +1093,7 @@ resume_custom() {
         echo ""
         read -rp "Resume the Rocky9 VM? [Y/N]: " yn
         case $yn in
-            [Yy]* ) ROCKY="ts.rocky9"; break;;
+            [Yy]* ) ROCKY="ts.rocky8"; break;;
             [Nn]* ) ROCKY=""; break;;
             [Bb]* ) clear; deploy; break;;
             * ) echo -e "\n${RED} Selection invalid, try again:${NC} "; sleep 2;;
@@ -1150,7 +1150,7 @@ fi
 snapshot() {
     echo ""
     echo ""
-    for machine in elastic rocky9 windows10
+    for machine in elastic rocky8 windows10
     do
         vagrant snapshot save ts."${machine}" ts."${machine}"_initial;
     done
@@ -1164,7 +1164,7 @@ snapshot_restore() {
     echo ""
     echo ""
     echo "Restoring Snapshot..."
-    for machine in elastic rocky9 windows10
+    for machine in elastic rocky8 windows10
     do
         vagrant snapshot restore ts."${machine}" ts."${machine}"_initial
     done
@@ -1178,7 +1178,7 @@ nuke_pave() {
     echo ""
     vagrant destroy -f "${ELASTIC}" "${WINDOWS}" "${ROCKY}";
 
-    for machine in elastic windows10 rocky9
+    for machine in elastic windows10 rocky8
     do
         vagrant box remove "thremulation-station/${machine}";
     done

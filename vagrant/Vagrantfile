@@ -8,10 +8,10 @@
 Vagrant.configure("2") do |config|
 
   config.vm.define "ts.elastic", primary: true do |cfg|
-    cfg.vm.box = "bento/rockylinux-9"
-    cfg.vm.box_version = "202407.23.0"
+    cfg.vm.box = "olympus/elastic"
+    cfg.vm.box_version = "1.0.0"
     cfg.vm.hostname = "elastic"
-    cfg.disksize.size = "256GB"
+    #cfg.disksize.size = "256GB"
     cfg.vm.synced_folder '.', '/vagrant', disabled: true
     cfg.vm.network "private_network", ip: "192.168.56.10", auto_config: true
     cfg.vm.network "forwarded_port", guest: 5601, host: 5601
@@ -26,34 +26,34 @@ Vagrant.configure("2") do |config|
     end
 
     # Enable PowerShell
-    cfg.vm.provision "enable-psremoting", type: "shell", path: "../vagrant/scripts/enable-psremoting.sh"
+    #cfg.vm.provision "enable-psremoting", type: "shell", path: "../vagrant/scripts/enable-psremoting.sh"
 
     # Install Atomic Red Team
-    cfg.vm.provision "install-atomic-redteam", type: "shell", path: "../vagrant/scripts/elastic/install-atomicredteam.ps1"
+    #cfg.vm.provision "install-atomic-redteam", type: "shell", path: "../vagrant/scripts/elastic/install-atomicredteam.ps1"
 
     # Caldera
-    cfg.vm.provision "install-caldera", type: "shell", path: "../vagrant/scripts/install-caldera.sh"
+    #cfg.vm.provision "install-caldera", type: "shell", path: "../vagrant/scripts/install-caldera.sh"
 
     # Download and Start Container Project
 
-    cfg.vm.provision "file", source: ".env", destination: "/home/vagrant/.env"
+    #cfg.vm.provision "file", source: ".env", destination: "/home/vagrant/.env"
 
-    cfg.vm.provision "download-and-install-ecp", type: "shell", path: "../vagrant/scripts/elastic/download-elastic-containers.sh"
+    #cfg.vm.provision "download-and-install-ecp", type: "shell", path: "../vagrant/scripts/elastic/download-elastic-containers.sh"
 
-    #cfg.vm.provision "download-install-ecp", type: "shell", path: "../vagrant/scripts/elastic/download-elastic-containers.sh" 
+    cfg.vm.provision "start-ecp", type: "shell", path: "../vagrant/scripts/elastic/start_ecp.sh" 
 
 
     # Setup the Elastic Stack
-    #cfg.vm.provision "shell" do |s2|
-    #  s2.path = "../vagrant/scripts/elastic/setup-elastic.sh"
-    #  s2.env = {
-    #    "ELASTIC_STACK_VERSION" => "8.13.0",
-    #    "KIBANA_URL" => "https://192.168.56.10:5601",
-    #    "KIBANA_AUTH" => "elastic:vagrant",
-    #    "ELASTICSEARCH_URL" => "https://192.168.56.10:9200",
-    #    "FLEET_SERVER_URL" => "https://192.168.56.10:8220"
-    #  }
-    #end
+    cfg.vm.provision "shell" do |s2|
+      s2.path = "../vagrant/scripts/elastic/setup-elastic.sh"
+      s2.env = {
+        "ELASTIC_STACK_VERSION" => "8.13.0",
+        "KIBANA_URL" => "https://192.168.56.10:5601",
+        "KIBANA_AUTH" => "elastic:vagrant",
+        "ELASTICSEARCH_URL" => "https://192.168.56.10:9200",
+        "FLEET_SERVER_URL" => "https://192.168.56.10:8220"
+      }
+    end
 
     # Install Vectr
     if ENV['VECTR_INSTALL'] == "true"    
@@ -72,14 +72,15 @@ Vagrant.configure("2") do |config|
   
 
   config.vm.define "ts.windows10" do |cfg|
-    cfg.vm.box = "gusztavvargadr/windows-10"
-    cfg.vm.box_version = "2202.0.2407"
+    cfg.vm.box = "olympus/windows10"
+    cfg.vm.box_version = "1.0.0"
     cfg.vm.hostname = "windows10"
     cfg.vm.synced_folder '.', '/vagrant', disabled: true
     cfg.vm.network "private_network", ip: "192.168.56.11", gateway: "192.168.56.1", dns: "192.168.56.14"
-    config.vm.network "forwarded_port", guest: 3389, host: 33389, auto_correct: true
-    config.vm.network "forwarded_port", guest: 5985, host: 55985, auto_correct: true
-
+    cfg.vm.network "forwarded_port", guest: 3389, host: 33389, auto_correct: true
+    cfg.vm.network "forwarded_port", guest: 5985, host: 55985, auto_correct: true
+    cfg.vm.guest = "windows"
+    cfg.vm.communicator = "winrm"
 
     
     cfg.vm.provider :virtualbox do |vb|
@@ -88,10 +89,11 @@ Vagrant.configure("2") do |config|
       vb.cpus = 2
     end
     cfg.vm.provision "exprfix", type: "shell", path: "../vagrant/scripts/windows10/fix-windows-expiration.ps1"
-    cfg.vm.provision "install-chocolatey", type: "shell", path: "../vagrant/scripts/install-choco.ps1"
-    cfg.vm.provision "install-pwshssh", type: "shell", path: "../vagrant/scripts/windows10/install-pwshssh.ps1"
-    cfg.vm.provision "install-sysmon", type: "shell", path: "../vagrant/scripts/windows10/install-sysmon.ps1"
-    cfg.vm.provision "install-advaudit", type: "shell", path: "../vagrant/scripts/windows10/install-advaudit.ps1"
+    cfg.vm.provision "shutup10", type: "shell", path: "./scripts/install-shutup10config.ps1"
+    #cfg.vm.provision "install-chocolatey", type: "shell", path: "../vagrant/scripts/install-choco.ps1"
+    #cfg.vm.provision "install-pwshssh", type: "shell", path: "../vagrant/scripts/windows10/install-pwshssh.ps1"
+    #cfg.vm.provision "install-sysmon", type: "shell", path: "../vagrant/scripts/windows10/install-sysmon.ps1"
+    #cfg.vm.provision "install-advaudit", type: "shell", path: "../vagrant/scripts/windows10/install-advaudit.ps1"
 
     if ENV['DC'] == "ts.dc"
       cfg.vm.provision "join-domain", type: "shell", path: "../vagrant/scripts/join-domain.ps1"
@@ -133,10 +135,10 @@ Vagrant.configure("2") do |config|
 
 
 
-  config.vm.define "ts.rocky9" do |cfg|
-    cfg.vm.box = "bento/rockylinux-9"
-    cfg.vm.box_version = "202401.31.0 "
-    cfg.vm.hostname = "rocky9"
+  config.vm.define "ts.rocky8" do |cfg|
+    cfg.vm.box = "olympus/rocky8"
+    cfg.vm.box_version = "1.0.0"
+    cfg.vm.hostname = "rocky8"
     cfg.vm.synced_folder '.', '/vagrant', disabled: true
     cfg.vm.network "private_network", ip: "192.168.56.12", auto_config: true
     cfg.vm.network "forwarded_port", guest: 80, host: 8080
@@ -149,7 +151,7 @@ Vagrant.configure("2") do |config|
     end
 
     # Enable PowerShell Remoting
-    cfg.vm.provision "enable-psremoting", type: "shell", path: "../vagrant/scripts/enable-psremoting.sh"
+    #cfg.vm.provision "enable-psremoting", type: "shell", path: "../vagrant/scripts/enable-psremoting.sh"
 
     # Setup Samba/Nginx
     cfg.vm.provision "setup-services", type: "shell", path: "../vagrant/scripts/rocky9/setup-client-services.sh"
