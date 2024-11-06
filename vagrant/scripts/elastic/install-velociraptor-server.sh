@@ -11,14 +11,15 @@ echo "Installing Velociraptor Server"
 mkdir -p /opt/velociraptor
 cd /opt/velociraptor
 git clone https://github.com/weslambert/velociraptor-docker
+cp /home/vagrant/.env /opt/velociraptor/velociraptor-docker
 cd velociraptor-docker
 
 # Change user name and password
-sed -i 's/VELOX_USER=admin/VELOX_USER=velox/g' .env
-sed -i 's/VELOX_PASSWORD=admin/VELOX_PASSWORD=vagrant/g' .env
+#sed -i 's/VELOX_USER=admin/VELOX_USER=velox/g' .env
+#sed -i 's/VELOX_PASSWORD=admin/VELOX_PASSWORD=vagrant/g' .env
 
 # Change server IP
-sed -i 's/VelociraptorServer/192.168.56.10/g' .env
+#sed -i 's/VelociraptorServer/192.168.56.10/g' .env
 
 docker compose up -d
 
