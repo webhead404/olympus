@@ -13,12 +13,12 @@ packer {
 
 variable "iso_md5" {
   type    = string
-  default = "e85637e135e9b6dbc5fa02b463a95764"
+  default = "e469d0add9f698a1b48adce2520403ef"
 }
 
 variable "iso_path" {
   type    = string
-  default = "https://software-download.microsoft.com/download/pr/19041.264.200511-0456.vb_release_svc_refresh_CLIENTENTERPRISEEVAL_OEMRET_x64FRE_en-us.iso"
+  default = "https://software-static.download.prss.microsoft.com/dbazure/988969d5-f34g-4e03-ac9d-1f9786c66750/19045.2006.220908-0225.22h2_release_svc_refresh_CLIENTENTERPRISEEVAL_OEMRET_x64FRE_en-us.iso"
 }
 
 locals { timestamp = regex_replace(timestamp(), "[- TZ:]", "") }
@@ -64,7 +64,7 @@ build {
       "./scripts/install-shutup10.ps1", 
       "./scripts/cleanout.ps1", 
       "./scripts/debloater.ps1"
-      ]
+    ]
   }
 
   provisioner "windows-restart" {

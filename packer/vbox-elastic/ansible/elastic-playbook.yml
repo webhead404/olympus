@@ -122,6 +122,13 @@
         immediate: yes
         state: enabled
 
+    - name: Add Velocirpator Firewall Rule
+      firewalld:
+        zone: public
+        port: 8000/tcp
+        immediate: yes
+        state: enabled
+
 # Elastic Container Project
 
     - name: Start and Enable Docker
@@ -137,9 +144,8 @@
 
     - name: Add environment file
       copy:
-        src: ../../vagrant/.env
+        src: ./files/.env
         dest: /home/vagrant/elastic-container/.env
-      remote_src: true  
 
     - name: Confirm Directory Permissions
       file:
