@@ -217,7 +217,7 @@ Vagrant.configure("2") do |config|
     cfg.vm.provision "create-domain", type: "shell", path: "../vagrant/scripts/dc/create-domain.ps1", args: "192.168.56.14"
     
     # Restart DC
-    cfg.vm.provision :reload
+    cfg.vm.provision "reload"
 
     # Configure OU
     cfg.vm.provision "configure-ou", type: "shell", path: "../vagrant/scripts/dc/configure-ou.ps1"

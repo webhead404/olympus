@@ -413,13 +413,13 @@ deploy() {
 deploy_quick() {
     while true; do
         clear
-        echo -e "${LIGHTBLUE}       ___           __          ${NC}"
-        echo -e "${LIGHTBLUE}      / _ \\___ ___  / /__  __ __ ${NC}"
-        echo -e "${LIGHTBLUE}     / // / -_) _ \\/ / _ \\/ // / ${NC}"
-        echo -e "${LIGHTBLUE}    /____/\\__/ .__/_/\\___/\\_, /  ${NC}"
-        echo -e "${LIGHTBLUE}            /_/          /___/   ${NC}"
-        echo -e "${LIGHTBLUE}    (B)ack to Main               ${NC}"
-        echo -e "${LIGHTBLUE} --------------------------------${NC}"
+        echo -e "${LIGHTBLUE}       ___           __          ${NC}";
+        echo -e "${LIGHTBLUE}      / _ \___ ___  / /__  __ __ ${NC}";
+        echo -e "${LIGHTBLUE}     / // / -_) _ \/ / _ \/ // / ${NC}";
+        echo -e "${LIGHTBLUE}    /____/\__/ .__/_/\___/\_, /  ${NC}";
+        echo -e "${LIGHTBLUE}            /_/          /___/   ${NC}";
+        echo -e "${LIGHTBLUE}    (B)ack to Main               ${NC}";
+        echo -e "${LIGHTBLUE} --------------------------------${NC}";
         echo ""
         echo " You have chosen to Quick-Deploy all boxes."
         echo " This includes the following configuration:"
@@ -430,18 +430,18 @@ deploy_quick() {
         echo ""
         echo "    Rocky 9....:  Linux target box"
         echo ""
-        echo "In addition to the base emulation, you can choose the deployment method."
+        echo " In addition to the base emulation, you can choose what Vagrant boxes you want, and can customize further with any add-ons."
         echo ""
+        echo "If you choose to deploy pre-built images, take note it will take longer to deploy the software stack." 
         
-        # New prompt for deployment method
+        # New prompt for box selection
         read -rp " Use Olympus-supplied instances or pre-built images (not provisioned)? [O/P]: " method
         case $method in
             [Oo]* )
-                echo "Using Olympus-supplied instances..."
-                # Set any variables or configurations specific to Olympus-supplied instances here
+                echo "Using Olympus-supplied boxes..."
                 ;;
             [Pp]* )
-                echo "Using pre-built images that are not provisioned..."
+                echo "Using pre-built images that are not fully provisioned..."
                 cd ../pre-built/vagrant/
                 ;;
             * )
@@ -483,7 +483,7 @@ deploy_quick() {
 
 
 
-# Custom deploy consists of elastic box PLUS:
+# Custom deploy consists of Elastic box PLUS:
 deploy_custom() {
     while true; do
         clear
@@ -495,6 +495,29 @@ deploy_custom() {
         echo -e "${LIGHTBLUE}    (B)ack to Main               ${NC}";
         echo -e "${LIGHTBLUE} --------------------------------${NC}";
         echo ""
+        echo " You have chosen Deploy-Custom to deploy a custom range."
+
+        echo "In addition to the base emulation, you can choose what Vagrant boxes you want, and can customize further with any add-ons."
+        echo ""
+        echo "If you choose to deploy pre-built images, take note it will take longer to deploy the software stack." 
+        echo ""
+        echo "If you choose to add the DC and Redops boxes you will need a decent Internet connection." 
+        
+        # New prompt for deployment method
+        read -rp " Use Olympus-supplied instances or pre-built images (not provisioned)? [O/P]: " method
+        case $method in
+            [Oo]* )
+                echo "Using Olympus-supplied instances..."
+                # Set any variables or configurations specific to Olympus-supplied instances here
+                ;;
+            [Pp]* )
+                echo "Using pre-built images that are not provisioned..."
+                cd ../pre-built/vagrant/
+                ;;
+            * )
+                echo -e "\n${RED} Invalid selection, please choose 'O' or 'P':${NC} "; sleep 2; continue;;
+        esac
+
         echo "The Elastic box is required."
         echo "What TARGET boxes would you like to deploy?"
         echo ""
@@ -1029,13 +1052,13 @@ manage() {
 resume() {
     while true; do
         clear
-        echo -e "${LIGHTBLUE}    __________     __  ___                        ${NC}";
-        echo -e "${LIGHTBLUE}   /_  __/ __/    /  |/  /__  ___  ___  ___  ___  ${NC}";
-        echo -e "${LIGHTBLUE}    / / _\ \     / /|_/ / _ \/ _ \/ _ \/ _ \/ -_) ${NC}";
-        echo -e "${LIGHTBLUE}   /_/ /___/    /_/  /_/\_,_/_//_/\_,_/\_, /\__/  ${NC}";
-        echo -e "${LIGHTBLUE}                                      /___/       ${NC}";
-        echo -e "${LIGHTBLUE}   (B)ack to Main                                 ${NC}";
-        echo -e "${LIGHTBLUE} ------------------------------------------------ ${NC}";
+        echo -e "${LIGHTBLUE}      __  ___                        ${NC}";
+        echo -e "${LIGHTBLUE}     /  |/  /__  ___  ___  ___  ___  ${NC}";
+        echo -e "${LIGHTBLUE}    / /|_/ / _ \/ _ \/ _ \/ _ \/ -_) ${NC}";
+        echo -e "${LIGHTBLUE}   /_/  /_/\_,_/_//_/\_,_/\_, /\__/  ${NC}";
+        echo -e "${LIGHTBLUE}                         /___/       ${NC}";
+        echo -e "${LIGHTBLUE}   (B)ack to Main or (E)xit          ${NC}";
+        echo -e "${LIGHTBLUE} ------------------------------------${NC}";
         echo ""
         echo -e "${LIGHTBLUE}             --- Resume ---${NC}"
         echo ""
@@ -1073,13 +1096,13 @@ resume() {
 resume_custom() {
     while true; do
         clear
-        echo -e "${LIGHTBLUE}    __________     __  ___                        ${NC}";
-        echo -e "${LIGHTBLUE}   /_  __/ __/    /  |/  /__  ___  ___  ___  ___  ${NC}";
-        echo -e "${LIGHTBLUE}    / / _\ \     / /|_/ / _ \/ _ \/ _ \/ _ \/ -_) ${NC}";
-        echo -e "${LIGHTBLUE}   /_/ /___/    /_/  /_/\_,_/_//_/\_,_/\_, /\__/  ${NC}";
-        echo -e "${LIGHTBLUE}                                      /___/       ${NC}";
-        echo -e "${LIGHTBLUE}     (B)ack to Main                               ${NC}";
-        echo -e "${LIGHTBLUE} -------------------------------------------------${NC}";
+        echo -e "${LIGHTBLUE}      __  ___                        ${NC}";
+        echo -e "${LIGHTBLUE}     /  |/  /__  ___  ___  ___  ___  ${NC}";
+        echo -e "${LIGHTBLUE}    / /|_/ / _ \/ _ \/ _ \/ _ \/ -_) ${NC}";
+        echo -e "${LIGHTBLUE}   /_/  /_/\_,_/_//_/\_,_/\_, /\__/  ${NC}";
+        echo -e "${LIGHTBLUE}                         /___/       ${NC}";
+        echo -e "${LIGHTBLUE}   (B)ack to Main or (E)xit          ${NC}";
+        echo -e "${LIGHTBLUE} ------------------------------------${NC}";
         echo ""
         echo " The Elastic box is required."
         echo -e " Select the boxes you would like to turn back on along with it:"
@@ -1093,13 +1116,13 @@ resume_custom() {
     done
     while true; do
         clear
-        echo -e "${LIGHTBLUE}    __________     __  ___                        ${NC}";
-        echo -e "${LIGHTBLUE}   /_  __/ __/    /  |/  /__  ___  ___  ___  ___  ${NC}";
-        echo -e "${LIGHTBLUE}    / / _\ \     / /|_/ / _ \/ _ \/ _ \/ _ \/ -_) ${NC}";
-        echo -e "${LIGHTBLUE}   /_/ /___/    /_/  /_/\_,_/_//_/\_,_/\_, /\__/  ${NC}";
-        echo -e "${LIGHTBLUE}                                      /___/       ${NC}";
-        echo -e "${LIGHTBLUE}     (B)ack to Main                               ${NC}";
-        echo -e "${LIGHTBLUE} -------------------------------------------------${NC}";
+        echo -e "${LIGHTBLUE}      __  ___                        ${NC}";
+        echo -e "${LIGHTBLUE}     /  |/  /__  ___  ___  ___  ___  ${NC}";
+        echo -e "${LIGHTBLUE}    / /|_/ / _ \/ _ \/ _ \/ _ \/ -_) ${NC}";
+        echo -e "${LIGHTBLUE}   /_/  /_/\_,_/_//_/\_,_/\_, /\__/  ${NC}";
+        echo -e "${LIGHTBLUE}                         /___/       ${NC}";
+        echo -e "${LIGHTBLUE}   (B)ack to Main or (E)xit          ${NC}";
+        echo -e "${LIGHTBLUE} ------------------------------------${NC}";
         echo ""
         read -rp "Resume the Rocky9 VM? [Y/N]: " yn
         case $yn in
@@ -1111,13 +1134,13 @@ resume_custom() {
     done
     while true; do
         clear
-        echo -e "${LIGHTBLUE}    __________     __  ___                        ${NC}";
-        echo -e "${LIGHTBLUE}   /_  __/ __/    /  |/  /__  ___  ___  ___  ___  ${NC}";
-        echo -e "${LIGHTBLUE}    / / _\ \     / /|_/ / _ \/ _ \/ _ \/ _ \/ -_) ${NC}";
-        echo -e "${LIGHTBLUE}   /_/ /___/    /_/  /_/\_,_/_//_/\_,_/\_, /\__/  ${NC}";
-        echo -e "${LIGHTBLUE}                                      /___/       ${NC}";
-        echo -e "${LIGHTBLUE}     (B)ack to Main                               ${NC}";
-        echo -e "${LIGHTBLUE} -------------------------------------------------${NC}";
+        echo -e "${LIGHTBLUE}      __  ___                        ${NC}";
+        echo -e "${LIGHTBLUE}     /  |/  /__  ___  ___  ___  ___  ${NC}";
+        echo -e "${LIGHTBLUE}    / /|_/ / _ \/ _ \/ _ \/ _ \/ -_) ${NC}";
+        echo -e "${LIGHTBLUE}   /_/  /_/\_,_/_//_/\_,_/\_, /\__/  ${NC}";
+        echo -e "${LIGHTBLUE}                         /___/       ${NC}";
+        echo -e "${LIGHTBLUE}   (B)ack to Main or (E)xit          ${NC}";
+        echo -e "${LIGHTBLUE} ------------------------------------${NC}";
         echo ""
         echo ""
         echo " You have chosen resume (turn back on) the following boxes:"
