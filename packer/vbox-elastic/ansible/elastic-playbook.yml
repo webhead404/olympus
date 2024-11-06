@@ -5,17 +5,18 @@
 
     tasks:
   
-    - name: Import GPG Keys
-      apt_key:
+    - name: Import RPM Keys
+      rpm_key:
         state: present
-        url: "{{ item }}"
+        key: "{{ item }}"
       loop:
-        - https://download.docker.com/linux/debian/gpg
-        - https://packages.microsoft.com/keys/microsoft.asc
+        - https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
+        #- https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        - https://download.docker.com/linux/centos/gpg
 
-    #- name: Add EPEL Repository
-    #  yum:
-    #    name: epel-release
+    - name: Add EPEL Repository
+      yum:
+        name: epel-release
 
         #- name: Add Elastic Repository
         #yum_repository:
@@ -28,28 +29,30 @@
         #file: elastic
 
     - name: Add Docker Repository
-      apt_repository:
-        repo: deb [arch=amd64] https://download.docker.com/linux/debian bullseye stable
-        state: present
-        update_cache: yes
+      yum_repository:
+        name: docker-ce
+        description: Docker repository for docker-ce
+        enabled: yes
+        module_hotfixes: true
+        gpgcheck: yes
+        baseurl: https://download.docker.com/linux/centos/7/x86_64/stable
+        gpgkey: https://download.docker.com/linux/centos/gpg
 
     - name: Add Microsoft Repository
-      apt_repository:
-        repo: deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-debian-bullseye-prod bullseye main
-        state: present
-        update_cache: yes
+      yum_repository:
+        name: packages-microsoft-com-prod
+        description: Microsoft Repo for RHEL-based
+        enabled: yes
+        gpgcheck: yes
+        baseurl: https://packages.microsoft.com/rhel/7/prod/
+        gpgkey: https://packages.microsoft.com/keys/microsoft.asc
+        file: prod
 
-    - name: Clean Cache
-      command: apt-get clean
-
-    - name: Refresh apt-cache
-      command: apt-get update
-
-    #- name: Clean Yum Cache
-    #  command: yum clean all
+    - name: Clean Yum Cache
+      command: yum clean all
 
     - name: Install System Tools
-      apt:
+      yum:
         name: "{{ packages }}"
         state: present
       vars:
@@ -57,11 +60,9 @@
           - vim
           - nano
           - tmux
-          - ufw
           - cockpit
           - git
           - wget
-          - jq
           - golang
           - bzip2
           - dos2unix
@@ -77,46 +78,56 @@
 
     - name: Start Firewalld Service
       systemd:
-        name: ufw
+        name: firewalld
         state: started
         enabled: yes
 
     - name: Add Elasticsearch Firewall Rule
-      ufw:
-        rule: allow
-        port: 9200
-        proto: tcp
+      firewalld:
+        zone: public
+        port: 9200/tcp
+        permanent: yes
+        immediate: yes
         state: enabled
         
     - name: Add Kibana Firewall Rule
-      ufw:
-        rule: allow
-        port: 5601
-        proto: tcp
+      firewalld:
+        zone: public
+        port: 5601/tcp
+        permanent: yes
+        immediate: yes
         state: enabled
 
     - name: Add Fleet Firewall Rule
-      ufw:
-        rule: allow
-        port: 8220
-        proto: tcp
+      firewalld:
+        zone: public
+        port: 8220/tcp
+        permanent: yes
+        immediate: yes
         state: enabled
 
-    #- name: Add AtomicGUI Firewall Rule
-    #  firewalld:
-    #    zone: public
-    #    port: 8487/tcp
-    #    permanent: yes
-    #    immediate: yes
-    #    state: enabled
+    - name: Add AtomicGUI Firewall Rule
+      firewalld:
+        zone: public
+        port: 8487/tcp
+        permanent: yes
+        immediate: yes
+        state: enabled
 
-    #- name: Add Caldera Firewall Rule
-    #  firewalld:
-    #    zone: public
-    #    port: 8888/tcp
-    #    permanent: yes
-    #    immediate: yes
-    #    state: enabled
+    - name: Add Caldera Firewall Rule
+      firewalld:
+        zone: public
+        port: 8888/tcp
+        permanent: yes
+        immediate: yes
+        state: enabled
+
+    - name: Add Velocirpator Firewall Rule
+      firewalld:
+        zone: public
+        port: 8000/tcp
+        immediate: yes
+        state: enabled
 
 # Elastic Container Project
 
@@ -154,7 +165,7 @@
 ###################################
 
     - name: Install Powershell
-      apt:
+      yum:
         name: powershell
         state: present
 
@@ -165,13 +176,6 @@
 ###################################
 # SSH Configuration
 ###################################
-
-    - name: Add SSH Rule for Vagrant
-      ufw:
-         rule: allow
-         port: '22'
-         proto: tcp
-         state: enabled
 
     - name: Uncomment Pass Auth Yes
       lineinfile:
