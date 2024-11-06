@@ -8,8 +8,8 @@
 Vagrant.configure("2") do |config|
 
   config.vm.define "ts.elastic", primary: true do |cfg|
-    cfg.vm.box = "bento/rockylinux-9"
-    cfg.vm.box_version = "202407.23.0"
+    cfg.vm.box = "olympus/elastic"
+    cfg.vm.box_version = "1.0.3"
     cfg.vm.hostname = "elastic"
     cfg.disksize.size = "256GB"
     cfg.vm.synced_folder '.', '/vagrant', disabled: true
@@ -44,16 +44,16 @@ Vagrant.configure("2") do |config|
 
 
     # Setup the Elastic Stack
-    #cfg.vm.provision "shell" do |s2|
-    #  s2.path = "../vagrant/scripts/elastic/setup-elastic.sh"
-    #  s2.env = {
-    #    "ELASTIC_STACK_VERSION" => "8.13.0",
-    #    "KIBANA_URL" => "https://192.168.56.10:5601",
-    #    "KIBANA_AUTH" => "elastic:vagrant",
-    #    "ELASTICSEARCH_URL" => "https://192.168.56.10:9200",
-    #    "FLEET_SERVER_URL" => "https://192.168.56.10:8220"
-    #  }
-    #end
+    cfg.vm.provision "shell" do |s2|
+      s2.path = "../vagrant/scripts/elastic/setup-elastic.sh"
+      s2.env = {
+        "ELASTIC_STACK_VERSION" => "8.15.3",
+        "KIBANA_URL" => "https://192.168.56.10:5601",
+        "KIBANA_AUTH" => "elastic:vagrant",
+        "ELASTICSEARCH_URL" => "https://192.168.56.10:9200",
+        "FLEET_SERVER_URL" => "https://192.168.56.10:8220"
+      }
+    end
 
     # Install Vectr
     if ENV['VECTR_INSTALL'] == "true"    
@@ -72,8 +72,8 @@ Vagrant.configure("2") do |config|
   
 
   config.vm.define "ts.windows10" do |cfg|
-    cfg.vm.box = "gusztavvargadr/windows-10"
-    cfg.vm.box_version = "2202.0.2407"
+    cfg.vm.box = "olympus/windows10"
+    cfg.vm.box_version = "1.0.1"
     cfg.vm.hostname = "windows10"
     cfg.vm.synced_folder '.', '/vagrant', disabled: true
     cfg.vm.network "private_network", ip: "192.168.56.11", gateway: "192.168.56.1", dns: "192.168.56.14"
@@ -105,6 +105,7 @@ Vagrant.configure("2") do |config|
 
     # Install Nextron Aurora Agent
     if ENV['aurora_install'] == "true"
+      cfg.vm.provision "file", source: "resources/aurora/aurora-lite.lic", destination: "C:/aurora-agent/aurora-lite.lic"
       cfg.vm.provision "install-aurora-agent", type: "shell", path: "../vagrant/scripts/windows10/install-aurora.ps1"
     end
 
@@ -122,7 +123,7 @@ Vagrant.configure("2") do |config|
     cfg.vm.provision "shell" do |s|
       s.path = "../vagrant/scripts/windows10/install-ea.ps1"
       s.env = {
-        "ELASTIC_STACK_VERSION" => '8.13.0',
+        "ELASTIC_STACK_VERSION" => '8.15.3',
         "KIBANA_URL" => 'https://192.168.56.10:5601',
         "KIBANA_AUTH" => 'elastic:vagrant',
         "ELASTICSEARCH_URL" => 'https://192.168.56.10:9200',
@@ -175,7 +176,7 @@ Vagrant.configure("2") do |config|
     cfg.vm.provision "shell" do |s|
       s.path = "../vagrant/scripts/rocky9/install-ea-linux.sh"
       s.env = {
-        "ELASTIC_STACK_VERSION" => "8.13.0",
+        "ELASTIC_STACK_VERSION" => "8.15.3",
         "KIBANA_URL" => "https://192.168.56.10:5601",
         "KIBANA_AUTH" => "elastic:vagrant",
         "ELASTICSEARCH_URL" => "https://192.168.56.10:9200",
@@ -236,7 +237,7 @@ Vagrant.configure("2") do |config|
     cfg.vm.provision "shell" do |s|
       s.path = "../vagrant/scripts/windows10/install-ea.ps1"
       s.env = {
-        "ELASTIC_STACK_VERSION" => '8.13.2',
+        "ELASTIC_STACK_VERSION" => '8.15.3',
         "KIBANA_URL" => 'https://192.168.56.10:5601',
         "KIBANA_AUTH" => 'elastic:vagrant',
         "ELASTICSEARCH_URL" => 'https://192.168.56.10:9200',
