@@ -442,7 +442,7 @@ deploy_quick() {
                 ;;
             [Pp]* )
                 echo "Using pre-built images that are not fully provisioned..."
-                cd ../pre-built/
+                cd ../pre-built/vagrant
                 ;;
             * )
                 echo -e "\n${RED} Invalid selection, please choose 'O' or 'P':${NC} "; sleep 2; continue;;
@@ -512,7 +512,7 @@ deploy_custom() {
                 ;;
             [Pp]* )
                 echo "Using pre-built images that are not provisioned..."
-                cd ../pre-built/vagrant/
+                cd ../pre-built
                 ;;
             * )
                 echo -e "\n${RED} Invalid selection, please choose 'O' or 'P':${NC} "; sleep 2; continue;;

@@ -1,15 +1,8 @@
-#$set_environment_variables = <<SCRIPT
-#tee "/etc/profile.d/myvars.sh" > "/dev/null" <<EOF
-# ECP file.
-#export ECP_INFO=#{ENV['ECP_INFO']}
-#EOF
-#SCRIPT
-
 Vagrant.configure("2") do |config|
 
   config.vm.define "ts.elastic", primary: true do |cfg|
-    cfg.vm.box = "olympus/elastic"
-    cfg.vm.box_version = "1.0.4"
+    cfg.vm.box = "bento/rockylinux-9"
+    cfg.vm.box_version = "202401.31.0"
     cfg.vm.hostname = "elastic"
     #cfg.disksize.size = "256GB"
     cfg.vm.disk :disk, size: "256GB", primary: true
@@ -27,10 +20,10 @@ Vagrant.configure("2") do |config|
     end
 
     # Enable PowerShell
-    #cfg.vm.provision "enable-psremoting", type: "shell", path: "../vagrant/scripts/enable-psremoting.sh"
+    cfg.vm.provision "enable-psremoting", type: "shell", path: "../vagrant/scripts/pre-built/enable-psremoting.sh"
 
     # Install Atomic Red Team
-    #cfg.vm.provision "install-atomic-redteam", type: "shell", path: "../vagrant/scripts/elastic/install-atomicredteam.ps1"
+    cfg.vm.provision "install-atomic-redteam", type: "shell", path: "../vagrant/scripts/pre-built/install-atomicredteam.ps1"
 
     # Caldera
     #cfg.vm.provision "install-caldera", type: "shell", path: "../vagrant/scripts/install-caldera.sh"
@@ -39,9 +32,9 @@ Vagrant.configure("2") do |config|
 
     cfg.vm.provision "file", source: "../vagrant/.env", destination: "/home/vagrant/.env"
 
-    #cfg.vm.provision "download-and-install-ecp", type: "shell", path: "../vagrant/scripts/elastic/download-elastic-containers.sh"
+    cfg.vm.provision "download-and-install-ecp", type: "shell", path: "../vagrant/scripts/pre-built/download-elastic-containers.sh"
 
-    cfg.vm.provision "start-ecp", type: "shell", path: "../vagrant/scripts/elastic/start_ecp.sh" 
+    cfg.vm.provision "start-ecp", type: "shell", path: "../vagrant/scripts/elastic/start-ecp.sh" 
 
 
     # Setup the Elastic Stack
@@ -66,20 +59,18 @@ Vagrant.configure("2") do |config|
     # Install Velociraptor Server
     if ENV['velociraptor_install'] == "true"
       cfg.vm.network "forwarded_port", guest: 8889, host: 9000
-      #cfg.vm.provision "transfer-velox-msi", type: "file", source: "../vagrant/resources/velox/clients/windows/velociraptor_client_repacked.msi", destination: "C:\\tmp\\velociraptor_client_repacked.msi"
       cfg.vm.provision "install-velociraptor-server", type: "shell", path: "../vagrant/scripts/elastic/install-velociraptor-server.sh"
     end
   end
   
 
   config.vm.define "ts.windows10" do |cfg|
-    cfg.vm.box = "olympus/windows10"
-    cfg.vm.box_version = "1.0.2"
+    cfg.vm.box = "gusztavvargadr/windows-10"
+    cfg.vm.box_version = "2202.0.2408"
     cfg.vm.hostname = "windows10"
     cfg.vm.synced_folder '.', '/vagrant', disabled: true
     cfg.vm.network "private_network", ip: "192.168.56.11", gateway: "192.168.56.1", dns: "192.168.56.14"
     cfg.vm.network "forwarded_port", guest: 3389, host: 33389, auto_correct: true
-    cfg.vm.network "forwarded_port", guest: 5985, host: 55985, auto_correct: true
     cfg.vm.guest = "windows"
     cfg.vm.communicator = "winrm"
 
@@ -89,10 +80,12 @@ Vagrant.configure("2") do |config|
       vb.cpus = 2
     end
     cfg.vm.provision "exprfix", type: "shell", path: "../vagrant/scripts/windows10/fix-windows-expiration.ps1"
-    #cfg.vm.provision "install-chocolatey", type: "shell", path: "../vagrant/scripts/install-choco.ps1"
-    #cfg.vm.provision "install-pwshssh", type: "shell", path: "../vagrant/scripts/windows10/install-pwshssh.ps1"
-    #cfg.vm.provision "install-sysmon", type: "shell", path: "../vagrant/scripts/windows10/install-sysmon.ps1"
-    #cfg.vm.provision "install-advaudit", type: "shell", path: "../vagrant/scripts/windows10/install-advaudit.ps1"
+    cfg.vm.provision "file", source: "../vagrant/resources/shutup10.cfg", destination: "C:/Users/vagrant/shutup10.cfg"
+    cfg.vm.provision "shutup10", type: "shell", path: "../vagrant/scripts/windows10/install-shutup10config.ps1"
+    cfg.vm.provision "install-chocolatey", type: "shell", path: "../vagrant/scripts/pre-built/install-choco.ps1"
+    cfg.vm.provision "install-pwshssh", type: "shell", path: "../vagrant/scripts/pre-built/install-pwshssh.ps1"
+    cfg.vm.provision "install-sysmon", type: "shell", path: "../vagrant/scripts/pre-built/install-sysmon.ps1"
+    cfg.vm.provision "install-advaudit", type: "shell", path: "../vagrant/scripts/pre-built/install-advaudit.ps1"
 
     if ENV['DC'] == "ts.dc"
       cfg.vm.provision "join-domain", type: "shell", path: "../vagrant/scripts/join-domain.ps1"
@@ -136,8 +129,8 @@ Vagrant.configure("2") do |config|
 
 
   config.vm.define "ts.rocky9" do |cfg|
-    cfg.vm.box = "olympus/rocky9"
-    cfg.vm.box_version = "1.0.0"
+    cfg.vm.box = "bento/rockylinux-9"
+    cfg.vm.box_version = "202401.31.0"
     cfg.vm.hostname = "rocky9"
     cfg.vm.synced_folder '.', '/vagrant', disabled: true
     cfg.vm.network "private_network", ip: "192.168.56.12", auto_config: true
@@ -151,10 +144,10 @@ Vagrant.configure("2") do |config|
     end
 
     # Enable PowerShell Remoting
-    #cfg.vm.provision "enable-psremoting", type: "shell", path: "../vagrant/scripts/enable-psremoting.sh"
+    cfg.vm.provision "enable-psremoting", type: "shell", path: "../vagrant/scripts/pre-built/enable-psremoting.sh"
 
     # Setup Samba/Nginx
-    #cfg.vm.provision "setup-services", type: "shell", path: "../vagrant/scripts/rocky9/setup-client-services.sh"
+    cfg.vm.provision "setup-services", type: "shell", path: "../vagrant/scripts/pre-built/setup-client-services.sh"
 
 
     # Install SigmaCLI and Rules
