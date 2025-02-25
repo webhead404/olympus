@@ -4,9 +4,8 @@ set -o pipefail
 
 # Install PowerShell Core
 
-rpm --import https://packages.microsoft.com/keys/microsoft.asc
-yum install https://packages.microsoft.com/config/rhel/8/packages-microsoft-prod.rpm -y
-yum makecache
+curl -sSL -O https://packages.microsoft.com/config/rhel/9/packages-microsoft-prod.rpm
+rpm -i packages-microsoft-prod.rpm
 yum install powershell -y
 
 # Enable Powershell Remoting
